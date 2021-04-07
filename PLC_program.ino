@@ -143,6 +143,14 @@ void loop() {
         delay(500);
 
         RotateRight();
+        
+        LiftDown();
+        digitalWrite(Vacuum_1, HIGH);
+        delay(500);
+
+        SelectHand(2);
+        digitalWrite(Vacuum_1, LOW);
+        delay(500);
 
         digitalWrite(LED_Error, HIGH);
 
@@ -186,7 +194,7 @@ void TableGoRight() {
 }
 
 void TableGoLeft() {
-
+    // comment
     if (isMoving == false) {
 
         isMoving = true;
@@ -207,7 +215,7 @@ void TableGoLeft() {
 
     }
 
-}// // some comment
+}
 
 void TableGoCenter(char tableSide) {
     // R/r/1 - left table
@@ -258,28 +266,6 @@ void TableGoCenter(char tableSide) {
     {
         Serial.println("Incorrect input. Aborting sequence...");
     }
-    
-    /// <summary>
-  
-    /// </summary>
-   /* if (isMoving == false) {
-        isMoving = true;
-
-        digitalWrite(C5_cilindar, HIGH);
-        digitalWrite(C6_cilindar, LOW);
-        delay(cooldown);
-
-        Serial.print("Waiting for input from sensors C6 and C5. ");
-        while (isMoving == true) {
-
-            if (digitalRead(C6_uvucen) == 1 && digitalRead(C5_izvucen) == 1) {
-                isMoving = false;
-                Serial.println("Move completed.");
-            }
-        }
-    }*/
-
-
 }
 
 void TableGoUp(char tableSide) {
@@ -393,21 +379,22 @@ void RotateRight() {
     if (isMoving == false && (isUp == true ))  //maybe add "|| handSlot[0] == 0"
     {
         isMoving = true;
-
+        Serial.print("Rotating to the right.");
         digitalWrite(C7_cilindar, HIGH);
         delay(cooldown);
 
         while (isMoving == true) {
 
-            if (handIsRight == 1) {
+            if (digitalRead(handIsRight) == 1) {
                 isMoving = false;
+                Serial.println("Move completed.");
             }
         }
     }
     else if (isMoving == false && (isUp == false )) //maybe add "|| handSlot[0] == 0"
     {
         isMoving = true;
-
+        Serial.print("Rotating to the right.");
         digitalWrite(C8_cilindar, LOW);
         delay(cooldown);
 
@@ -418,8 +405,9 @@ void RotateRight() {
 
         while (isMoving == true) {
 
-            if (handIsRight == 1) {
+            if (digitalRead(handIsRight) == 1) {
                 isMoving = false;
+                Serial.println("Move completed.");
             }
         }
     }
@@ -435,20 +423,23 @@ void RotateLeft() {
     if (isMoving == false && (isUp == true)) //maybe add "|| handSlot[0] == 0"
     {
         isMoving = true;
+        Serial.print("Rotating to the right.");
 
         digitalWrite(C7_cilindar, LOW);
         delay(cooldown);
 
         while (isMoving == true) {
 
-            if (handIsLeft == 1) {
+            if (digitalRead(handIsLeft) == 1) {
                 isMoving = false;
+                Serial.println("Move completed.");
             }
         }
     }
     else if (isMoving == false && (isUp == false)) //maybe add "|| handSlot[0] == 0"
     {
         isMoving = true;
+        Serial.print("Rotating to the right.");
 
         digitalWrite(C8_cilindar, LOW);
         delay(cooldown);
@@ -460,8 +451,9 @@ void RotateLeft() {
 
         while (isMoving == true) {
 
-            if (handIsRight == 1) {
+            if (digitalRead(handIsLeft) == 1) {
                 isMoving = false;
+                Serial.println("Move completed.");
             }
         }
     }
@@ -478,7 +470,8 @@ void SelectHand(char selectHand) {
 
 
     if (isMoving == false) {
-
+        // 1-lower suction (default)
+        // 2-upper suction
         isMoving = true;
         Serial.print("Initiating hand selection. ");
 
