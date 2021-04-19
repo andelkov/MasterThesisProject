@@ -1,6 +1,9 @@
 #include <Controllino.h>
 #include <SPI.h>
+#include <Ethernet.h>
+#include "Mudbus.h"
 
+Mudbus Mb;
 int cooldown = 1000;                // Time between movement/valve activations
 int counter = 0;
 
@@ -71,13 +74,20 @@ const byte handIsLeft = 67;             // DI1   senzor C7.1, ruka je sad lijevo
 const byte objectGrabbed_V1 = 10;       // DI2   senzor vakuum 1
 const byte objectGrabbed_V2 = 11;       // DI3   senzor vakuum 2
 
-const byte interruptStartPin = CONTROLLINO_IN0; // IN0   interrupt ulaz, Start tipka
+const byte interruptStartPin = 18; // IN0   interrupt ulaz, Start tipka
 volatile byte startPressed = LOW;
 
-const byte interruptStopPin = CONTROLLINO_IN1;  // IN1   interrupt ulaz, Stop tipka
+const byte interruptStopPin = 19;  // IN1   interrupt ulaz, Stop tipka
 volatile byte stopPressed = LOW;
 
 void setup() {
+    uint8_t mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x02 };
+    uint8_t ip[] = { 192, 168, 0, 103 };
+    uint8_t gateway[] = { 192, 168, 0, 254 };
+    uint8_t subnet[] = { 255, 255, 255, 0 };
+    Ethernet.begin(mac, ip, gateway, subnet);
+
+
     Serial.begin(9600);
 
     pinMode(CONTROLLINO_IN0, INPUT);                            // IN0   tipka Start
@@ -124,48 +134,55 @@ void setup() {
     pinMode(interruptStartPin, INPUT);
     pinMode(interruptStopPin, INPUT);
 
-    attachInterrupt(interruptStartPin, StartPressed, FALLING);
-    attachInterrupt(interruptStopPin, StopPressed, RISING);
+    attachInterrupt(digitalPinToInterrupt(interruptStartPin), StartPressed, FALLING);
+    attachInterrupt(digitalPinToInterrupt(interruptStopPin), StopPressed, RISING);
 } 
 
 //////////////////////////////// MAIN //////////////////////////////////////////////
 void loop() {
-    Serial.println("Starting program....");
+    
     digitalWrite(LED_Start, HIGH);
+    Mb.Run();
+
+    digitalWrite(CONTROLLINO_R1, Mb.R[2]);
+
+    Mb.R[1] = digitalRead(CONTROLLINO_A0);
+
+    Serial.println(Mb.R[1]);
 
     if (startPressed == HIGH ) {
-        
+        Serial.println("Starting program....");
         delay(2000);
 
-        LiftUp();
+        //LiftUp();
 
-        TableGoLeft();
-        TableGoCenter(1);
-        TableGoRight();
-        TableGoUp(1);
+        //TableGoLeft();
+        //TableGoCenter(1);
+        //TableGoRight();
+        //TableGoUp(1);
 
-        LiftDown();
+        //LiftDown();
 
-        digitalWrite(Vacuum_1, HIGH);
-        delay(500);
+        //digitalWrite(Vacuum_1, HIGH);
+        //delay(500);
 
-        LiftUp();
-        TableGoCenter(1);
-        LiftDown();
-        digitalWrite(Vacuum_1, LOW);
-        delay(500);
+        //LiftUp();
+        //TableGoCenter(1);
+        //LiftDown();
+        //digitalWrite(Vacuum_1, LOW);
+        //delay(500);
 
-        RotateRight();
-        
-        LiftDown();
-        digitalWrite(Vacuum_1, HIGH);
-        delay(500);
+        //RotateRight();
+        //
+        //LiftDown();
+        //digitalWrite(Vacuum_1, HIGH);
+        //delay(500);
 
-        SelectHand(2);
-        digitalWrite(Vacuum_1, LOW);
-        delay(500);
+        //SelectHand(2);
+        //digitalWrite(Vacuum_1, LOW);
+        //delay(500);
 
-        digitalWrite(LED_Error, HIGH);
+        //digitalWrite(LED_Error, HIGH);
 
        
         startPressed = LOW;
@@ -626,11 +643,12 @@ void StartPressed () {
     Serial.println("Start pressed.");
     startPressed = HIGH;
     digitalWrite(LED_Start, LOW);
+    digitalWrite(LED_Stop, LOW);
 }
 
 void StopPressed() {
-    Serial.println("Start pressed.");
-    //stopPressed
+    Serial.println("Stop pressed.");
+    digitalWrite(LED_Stop, HIGH);
 }
 
 //////////////////////////////// FUNCTIONS //////////////////////////////////////////////
