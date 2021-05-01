@@ -3,40 +3,37 @@
 #include <Ethernet.h>
 #include "Mudbus.h"
 
+#define NULL 0
 Mudbus Mb;
 //Function codes 1(read coils), 3(read registers), 5(write coil), 6(write register)
-//signed int Mb.R[0 to 125] and bool Mb.C[0 to 128] MB_N_R MB_N_C
-//Port 502 is default (defined by MB_PORT, in Mudbus.h)
+//signed int Mb.R[0 to 125]
+//Port 502 is default (defined by MB_PORT, in Mudbus.h) 
 
 
-int cooldown = 1000;                // Time between movement/valve activations
-int counter = 0;
+int cooldown = 1000;                // Time between movement/valve activations 111000111
+int counter = 0;        
+char selectMode;
 
+byte i;
 char tableSide;
 char selectHand = 1;
-
-char handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full.
-
-char leftTable[4][4] = {
-
-  {0, 0,  0,  0  },
-  {0, 1,  1,  1  },
-  {0, 1,  1,  1  },
-  {0, 1,  1,  1  }
-
-};
-
-char rightTable[4][4] = {
-
-  {0, 0,  0,  0  },
-  {0, 1,  1,  1  },
-  {0, 1,  1,  1  },
-  {0, 1,  1,  1  }
-
-};
-
+char handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
+byte workMode = 1;                 // Select work mode
 bool isUp = false;                 // Body is or isn't in elevated position.    
 bool isMoving = false;             // The manipulator is or isn't moving.
+
+char tableRight1stRow = Mb.R[5];
+char tableRight2ndRow = Mb.R[6];
+char tableRight3rdRow = Mb.R[7];
+
+char tableLeft1stRow = Mb.R[8];
+char tableLeft2ndRow = Mb.R[9];
+char tableLeft3rdRow = Mb.R[10];
+
+
+char tableLeft[10] =  { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1};//Actual state left table
+
+char tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0};//Actual state right table
 
 
 const byte C1_cilindar = CONTROLLINO_R1; // R1    Cilindar 1
@@ -94,81 +91,86 @@ void setup() {
     uint8_t subnet[] = { 255, 255, 255, 0 };
     Ethernet.begin(mac, ip, subnet);
 
-    delay(5000);
+    delay(2000);
 
     Serial.begin(9600);
     Serial.print("Started. ");
     Serial.print("My IP address: ");
     Serial.println(Ethernet.localIP());
 
+    for (i = 0; i < 126; i++) {                                 // Set every Modbus register value to 0
+        Mb.R[i] = 0;
+    }
+    Serial.println("Modbus registers set 0");
+
     pinMode(CONTROLLINO_IN0, INPUT);                            // IN0   tipka Start
-    Mb.C[100] = CONTROLLINO_IN0; Mb.C[100] = 0;
+    Mb.R[0] = CONTROLLINO_IN0; Mb.R[0] = 0;
     pinMode(CONTROLLINO_IN1, INPUT);                            // IN1   tipka Stop
-    Mb.C[101] = CONTROLLINO_IN1; Mb.C[101] = 0;
+    Mb.R[1] = CONTROLLINO_IN1; Mb.R[1] = 0;
 
     pinMode(CONTROLLINO_A0, INPUT);                             // AI0   senzor C1.0
-    Mb.C[0] = CONTROLLINO_IN1;
+    Mb.R[69] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A1, INPUT);                             // AI1   senzor C1.1
-    Mb.C[1] = CONTROLLINO_IN1;
+    Mb.R[1] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A2, INPUT);                             // AI2   senzor C2.0
-    Mb.C[2] = CONTROLLINO_IN1;
+    Mb.R[2] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A3, INPUT);                             // AI3   senzor C2.1
-    Mb.C[3] = CONTROLLINO_IN1;
+    Mb.R[3] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A4, INPUT);                             // AI4   senzor C3.0
-    Mb.C[4] = CONTROLLINO_IN1;
+    Mb.R[4] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A5, INPUT);                             // AI5   senzor C3.1
-    Mb.C[5] = CONTROLLINO_IN1;
+    Mb.R[5] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A6, INPUT);                             // AI6   senzor C4.0
-    Mb.C[6] = CONTROLLINO_IN1;
+    Mb.R[6] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A7, INPUT);                             // AI7   senzor C4.1
-    Mb.C[7] = CONTROLLINO_IN1;
+    Mb.R[7] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A8, INPUT);                             // AI8   senzor C5.0
-    Mb.C[8] = CONTROLLINO_IN1;
+    Mb.R[8] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A9, INPUT);                             // AI9   senzor C5.1
-    Mb.C[9] = CONTROLLINO_IN1;
+    Mb.R[9] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A10, INPUT);                            // AI10  senzor C6.0
-    Mb.C[10] = CONTROLLINO_IN1;
+    Mb.R[10] = CONTROLLINO_IN1;
     pinMode(CONTROLLINO_A11, INPUT);                            // AI11  senzor C6.1
-    Mb.C[11] = CONTROLLINO_IN1;
+    Mb.R[11] = CONTROLLINO_IN1;
 
     pinMode(66, INPUT);                                         // DI0   senzor C7.0, ruka je desno
-    Mb.C[12] = CONTROLLINO_IN1;
+    Mb.R[12] = CONTROLLINO_IN1;
     pinMode(67, INPUT);                                         // DI1   senzor C7.1
-    Mb.C[13] = CONTROLLINO_IN1;
+    Mb.R[13] = CONTROLLINO_IN1;
     pinMode(10, INPUT);                                         // DI2   senzor vakuum 1
-    Mb.C[14] = CONTROLLINO_IN1;
+    Mb.R[14] = CONTROLLINO_IN1;
     pinMode(11, INPUT);                                         // DI3   senzor vakuum 2
-    Mb.C[15] = CONTROLLINO_IN1;
+    Mb.R[15] = CONTROLLINO_IN1;
 
     pinMode(CONTROLLINO_D0, OUTPUT);                            // DO0   vacuum 1 ON (donji)
-    Mb.C[80] = CONTROLLINO_IN0; Mb.C[80] = 0;
+    Mb.R[80] = CONTROLLINO_IN0; Mb.C[80] = 0;
     pinMode(CONTROLLINO_D1, OUTPUT);                            // DO1   vacuum 2 ON (gornji)
-    Mb.C[81] = CONTROLLINO_IN0; Mb.C[81] = 0;
+    Mb.R[81] = CONTROLLINO_IN0; Mb.C[81] = 0;
     pinMode(CONTROLLINO_D5, OUTPUT);                            // DO5   LED Ready
-    Mb.C[85] = CONTROLLINO_IN0; Mb.C[85] = 0;
+    Mb.R[85] = CONTROLLINO_IN0; Mb.C[85] = 0;
     pinMode(CONTROLLINO_D6, OUTPUT);                            // DO6   LED Error
-    Mb.C[86] = CONTROLLINO_IN0; Mb.C[86] = 0;
+    Mb.R[86] = CONTROLLINO_IN0; Mb.C[86] = 0;
     pinMode(CONTROLLINO_D7, OUTPUT);                            // DO7   LED Stop
-    Mb.C[87] = CONTROLLINO_IN0; Mb.C[87] = 0;
+    Mb.R[87] = CONTROLLINO_IN0; Mb.C[87] = 0;
 
     pinMode(CONTROLLINO_R1, OUTPUT);                            // R1    Cilindar 1
-    Mb.C[91] = CONTROLLINO_IN0; Mb.C[91] = 0;
+    Mb.R[91] = CONTROLLINO_IN0; Mb.C[91] = 0;
     pinMode(CONTROLLINO_R2, OUTPUT);                            // R2    Cilindar 2
-    Mb.C[92] = CONTROLLINO_IN0; Mb.C[92] = 0;
+    Mb.R[92] = CONTROLLINO_IN0; Mb.C[92] = 0;
     pinMode(CONTROLLINO_R3, OUTPUT);                            // R3    Cilindar 3
-    Mb.C[93] = CONTROLLINO_IN0; Mb.C[93] = 0;
+    Mb.R[93] = CONTROLLINO_IN0; Mb.C[93] = 0;
     pinMode(CONTROLLINO_R4, OUTPUT);                            // R4    Cilindar 4
-    Mb.C[94] = CONTROLLINO_IN0; Mb.C[94] = 0;
+    Mb.R[94] = CONTROLLINO_IN0; Mb.C[94] = 0;
     pinMode(CONTROLLINO_R5, OUTPUT);                            // R5    Cilindar 5
-    Mb.C[95] = CONTROLLINO_IN0; Mb.C[95] = 0;
+    Mb.R[95] = CONTROLLINO_IN0; Mb.C[95] = 0;
     pinMode(CONTROLLINO_R6, OUTPUT);                            // R6    Aktuator 6
-    Mb.C[96] = CONTROLLINO_IN0; Mb.C[96] = 0;
+    Mb.R[96] = CONTROLLINO_IN0; Mb.C[96] = 0;
     pinMode(CONTROLLINO_R7, OUTPUT);                            // R7    Aktuator 7   (180 degree body rotate)
-    Mb.C[97] = CONTROLLINO_IN0; Mb.C[97] = 0;
+    Mb.R[97] = CONTROLLINO_IN0; Mb.C[97] = 0;
     pinMode(CONTROLLINO_R8, OUTPUT);                            // R8    Aktuator 8   (up-down of body)
-    Mb.C[98] = CONTROLLINO_IN0; Mb.C[98] = 0;
+    Mb.R[98] = CONTROLLINO_IN0; Mb.C[98] = 0;
     pinMode(CONTROLLINO_R9, OUTPUT);                            // R9    Aktuator 9   (180 degree hand rotate)
-    Mb.C[99] = CONTROLLINO_IN0; Mb.C[99] = 0;
+    Mb.R[99] = CONTROLLINO_IN0; Mb.C[99] = 0;
 
     pinMode(interruptStartPin, INPUT);
     pinMode(interruptStopPin, INPUT);
@@ -181,50 +183,41 @@ void setup() {
 void loop() {
 
     Mb.Run();
-    digitalWrite(LED_Start, HIGH);
-    
 
-    Mb.R[1] = digitalRead(CONTROLLINO_A0);
+    while ((startPressed == LOW) || (Mb.R[0] != 1)) {
+        digitalWrite(LED_Start, HIGH);
+        delay(1000);
+        digitalWrite(LED_Start, LOW);
+    }
 
-    Serial.println(Mb.R[1]);
+    switch (workMode) {
+    case 1:
+        Serial.println("Auto mode selected.");
 
-    if (startPressed == HIGH ) {
-        Serial.println("Starting program....");
-        delay(2000);
 
-        //LiftUp();
+        for (i = 5; i < 11; i++) {                                 // Set every Modbus register value to 0
+            if (Mb.R[i] != 0) {
 
-        //TableGoLeft();
-        //TableGoCenter(1);
-        //TableGoRight();
-        //TableGoUp(1);
 
-        //LiftDown();
 
-        //digitalWrite(Vacuum_1, HIGH);
-        //delay(500);
+            }
+        }
 
-        //LiftUp();
-        //TableGoCenter(1);
-        //LiftDown();
-        //digitalWrite(Vacuum_1, LOW);
-        //delay(500);
 
-        //RotateRight();
-        //
-        //LiftDown();
-        //digitalWrite(Vacuum_1, HIGH);
-        //delay(500);
+        //na kraju vrati taj registar u 0
 
-        //SelectHand(2);
-        //digitalWrite(Vacuum_1, LOW);
-        //delay(500);
 
-        //digitalWrite(LED_Error, HIGH);
 
-       
-        startPressed = LOW;
 
+
+
+
+            break;
+    case 2:
+        Serial.println("Jog mode selected");
+            break;
+    default:
+        Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
     }
 
     
@@ -440,7 +433,6 @@ void TableGoDown(char tableSide) {
     }
 
 }
-
 
 void RotateRight() {
 
@@ -684,14 +676,14 @@ void StartPressed () {
     digitalWrite(LED_Start, LOW);
     digitalWrite(LED_Stop, LOW);
 
-    Mb.C[0] = 1;
-    Mb.C[1] = 0;
+    Mb.R[0] = 1;
+    Mb.R[1] = 0;
 
 }
 
 void StopPressed() {
     Serial.println("Stop pressed.");
-    Mb.C[1] = 1;
+    Mb.R[1] = 1;
     digitalWrite(LED_Stop, HIGH);
 }
 
