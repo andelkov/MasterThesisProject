@@ -4,13 +4,17 @@
 #include "Mudbus.h"
 
 #define NULL 0
+#define highWord(w) ((w) >> 16) //
+#define lowWord(w) ((w) & 0xffff)
+#define makeLong(hi, low) (((long) hi) << 16 | (low)) //convert from two 16bit variables back to a 32bit variable
+
 Mudbus Mb;
+
 //Function codes 1(read coils), 3(read registers), 5(write coil), 6(write register)
 //signed int Mb.R[0 to 125]
 //Port 502 is default (defined by MB_PORT, in Mudbus.h) 
 
-
-int cooldown = 1000;                // Time between movement/valve activations 111000111
+int cooldown = 1000;                // Time between movement/valve activations 
 int counter = 0;        
 char selectMode;
 
@@ -50,38 +54,38 @@ const byte C8_cilindar = CONTROLLINO_R8; // R8    Cilindar 8 (up-down of body)
 const byte C9_cilindar = CONTROLLINO_R9; // R9    Cilindar 9 (180 degree hand rotate)
 
 
-const byte C1_izvucen = CONTROLLINO_A0; // AI0   senzor C1.0
-const byte C1_uvucen = CONTROLLINO_A1;  // AI1   senzor C1.1
-const byte C2_uvucen = CONTROLLINO_A2;  // AI2   senzor C2.0
-const byte C2_izvucen = CONTROLLINO_A3; // AI3   senzor C2.1
+const byte C1_izvucen = CONTROLLINO_A0;  // AI0   senzor C1.0
+const byte C1_uvucen = CONTROLLINO_A1;   // AI1   senzor C1.1
+const byte C2_uvucen = CONTROLLINO_A2;   // AI2   senzor C2.0
+const byte C2_izvucen = CONTROLLINO_A3;  // AI3   senzor C2.1
 
-const byte C3_izvucen = CONTROLLINO_A4; // AI4   senzor C3.0
-const byte C3_uvucen = CONTROLLINO_A5;  // AI5   senzor C3.1
-const byte C4_uvucen = CONTROLLINO_A6;  // AI6   senzor C4.0
-const byte C4_izvucen = CONTROLLINO_A7; // AI7   senzor C4.1
+const byte C3_izvucen = CONTROLLINO_A4;  // AI4   senzor C3.0
+const byte C3_uvucen = CONTROLLINO_A5;   // AI5   senzor C3.1
+const byte C4_uvucen = CONTROLLINO_A6;   // AI6   senzor C4.0
+const byte C4_izvucen = CONTROLLINO_A7;  // AI7   senzor C4.1
 
-const byte C5_izvucen = CONTROLLINO_A8; // AI8   senzor C5.0
-const byte C5_uvucen = CONTROLLINO_A9;  // AI9   senzor C5.1
-const byte C6_uvucen = CONTROLLINO_A10; // AI10  senzor C6.0
-const byte C6_izvucen = CONTROLLINO_A11;// AI11  senzor C6.1
+const byte C5_izvucen = CONTROLLINO_A8;  // AI8   senzor C5.0
+const byte C5_uvucen = CONTROLLINO_A9;   // AI9   senzor C5.1
+const byte C6_uvucen = CONTROLLINO_A10;  // AI10  senzor C6.0
+const byte C6_izvucen = CONTROLLINO_A11; // AI11  senzor C6.1
 
-const byte Vacuum_1 = CONTROLLINO_D0;   // DO0   upali vakuum 1
-const byte Vacuum_2 = CONTROLLINO_D1;   // DO1   upali vakuum 2
+const byte Vacuum_1 = CONTROLLINO_D0;    // DO0   upali vakuum 1
+const byte Vacuum_2 = CONTROLLINO_D1;    // DO1   upali vakuum 2
 
-const byte LED_Start = CONTROLLINO_D5;  // DO5   svjetlo Start/ON
-const byte LED_Error = CONTROLLINO_D6;  // DO6   svjetlo Error
-const byte LED_Stop = CONTROLLINO_D7;   // DO7   svjetlo Stop
+const byte LED_Start = CONTROLLINO_D5;   // DO5   svjetlo Start/ON
+const byte LED_Error = CONTROLLINO_D6;   // DO6   svjetlo Error
+const byte LED_Stop = CONTROLLINO_D7;    // DO7   svjetlo Stop
 
-const byte handIsRight = 66;            // DI0   senzor C7.0, ruka je sad desno
-const byte handIsLeft = 67;             // DI1   senzor C7.1, ruka je sad lijevo
+const byte handIsRight = 66;             // DI0   senzor C7.0, ruka je sad desno
+const byte handIsLeft = 67;              // DI1   senzor C7.1, ruka je sad lijevo
 
-const byte objectGrabbed_V1 = 10;       // DI2   senzor vakuum 1
-const byte objectGrabbed_V2 = 11;       // DI3   senzor vakuum 2
+const byte objectGrabbed_V1 = 10;        // DI2   senzor vakuum 1
+const byte objectGrabbed_V2 = 11;        // DI3   senzor vakuum 2
 
-const byte interruptStartPin = 18; // IN0   interrupt ulaz, Start tipka
+const byte interruptStartPin = 18;       // IN0   interrupt ulaz, Start tipka
 volatile byte startPressed = LOW;
 
-const byte interruptStopPin = 19;  // IN1   interrupt ulaz, Stop tipka
+const byte interruptStopPin = 19;        // IN1   interrupt ulaz, Stop tipka
 volatile byte stopPressed = LOW;
 
 void setup() {
@@ -184,27 +188,34 @@ void loop() {
 
     Mb.Run();
 
-    while ((startPressed == LOW) || (Mb.R[0] != 1)) {
+    if ((startPressed == LOW) || (Mb.R[0] != 1)) {
         digitalWrite(LED_Start, HIGH);
         delay(1000);
         digitalWrite(LED_Start, LOW);
     }
 
     switch (workMode) {
-    case 1:
+    case 1:///////////////////////////////////////////////////////////////////
         Serial.println("Auto mode selected.");
-
-
-        for (i = 5; i < 11; i++) {                                 // Set every Modbus register value to 0
+        // 111 dolazi
+        for (i = 5; i <= 10; i++) {           
             if (Mb.R[i] != 0) {
 
+                char choosenTableState = Mb.R[i];
+                if (i <= 7) {
+                    //choosenStateArray= FunctionConvert();
+                }
+                else {
 
+                }
+
+                
 
             }
+            //na kraju vrati taj registar u 0
         }
 
 
-        //na kraju vrati taj registar u 0
 
 
 
