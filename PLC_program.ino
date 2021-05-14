@@ -4,9 +4,9 @@
 #include "Mudbus.h"
 
 #define NULL 0
-#define highWord(w) ((w) >> 16) //
+#define highWord(w) ((w) >> 16) 
 #define lowWord(w) ((w) & 0xffff)
-#define makeLong(hi, low) (((long) hi) << 16 | (low)) //convert from two 16bit variables back to a 32bit variable
+#define makeLong(hi, low) (((long) hi) << 16 | (low)) //convert two 16bit variables back to a 32bit variable
 
 Mudbus Mb;
 
@@ -18,27 +18,25 @@ int cooldown = 1000;                // Time between movement/valve activations
 int counter = 0;        
 char selectMode;
 
+unsigned long longValue = 1011111111;
+unsigned long message;
+
+int loWord, hiWord;
+int messageArray[10];
+
 byte i;
 char tableSide;
+String arrayPart;
+String messageString;
 char selectHand = 1;
 char handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
 byte workMode = 1;                 // Select work mode
 bool isUp = false;                 // Body is or isn't in elevated position.    
 bool isMoving = false;             // The manipulator is or isn't moving.
 
-char tableRight1stRow = Mb.R[5];
-char tableRight2ndRow = Mb.R[6];
-char tableRight3rdRow = Mb.R[7];
-
-char tableLeft1stRow = Mb.R[8];
-char tableLeft2ndRow = Mb.R[9];
-char tableLeft3rdRow = Mb.R[10];
-
-
 char tableLeft[10] =  { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1};//Actual state left table
-
 char tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0};//Actual state right table
-
+int tempArray[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 const byte C1_cilindar = CONTROLLINO_R1; // R1    Cilindar 1
 const byte C2_cilindar = CONTROLLINO_R2; // R2    Cilindar 2
@@ -86,7 +84,7 @@ const byte interruptStartPin = 18;       // IN0   interrupt ulaz, Start tipka
 volatile byte startPressed = LOW;
 
 const byte interruptStopPin = 19;        // IN1   interrupt ulaz, Stop tipka
-volatile byte stopPressed = LOW;
+volatile byte stopPressed = LOW;                                                       //Pin configuration
 
 void setup() {
     uint8_t mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x51, 0x06 };
@@ -188,6 +186,24 @@ void loop() {
 
     Mb.Run();
 
+    loWord = lowWord(longValue);              // convert long to two words
+    hiWord = highWord(longValue);
+    message = makeLong(hiWord, loWord);
+
+    messageString = String(message);
+
+    for (char i = 0; i < 10; i++) {
+        arrayPart = messageString.charAt(i);
+        messageArray[i] = arrayPart.toInt();
+    }
+
+    Serial.print("The final end result is: ");    //printanje arraya
+    for (int i = 0; i < 10; i++)
+    {
+        Serial.print(messageArray[i]);
+    }
+
+
     if ((startPressed == LOW) || (Mb.R[0] != 1)) {
         digitalWrite(LED_Start, HIGH);
         delay(1000);
@@ -197,24 +213,64 @@ void loop() {
     switch (workMode) {
     case 1:///////////////////////////////////////////////////////////////////
         Serial.println("Auto mode selected.");
-        // 111 dolazi
-        for (i = 5; i <= 10; i++) {           
-            if (Mb.R[i] != 0) {
+        // 1 111 111 111 dolazi
 
-                char choosenTableState = Mb.R[i];
-                if (i <= 7) {
-                    //choosenStateArray= FunctionConvert();
+
+
+        for (char i = 1; i < 10; i++) {
+            if (messageArray[i] == 1) {
+                tempArray[i] = messageArray[i];
+
+            }
+
+            if (messageArray[0] == 1) {           //lijevi stol
+
+                if ((tempArray[1] == 1) || (tempArray[4] == 1) || (tempArray[7] == 1)) { // move table in x-axis
+                    Serial.println("TableGoLeft()");
+                }
+                else if ((tempArray[2] == 1) || (tempArray[5] == 1) || (tempArray[8] == 1)) {
+                    Serial.println("TableGoCenter()");
+                }
+                else if ((tempArray[3] == 1) || (tempArray[6] == 1) || (tempArray[9] == 1)) {
+                    Serial.println("TableGoRight()");
                 }
                 else {
 
                 }
 
-                
+                if ((tempArray[1] == 1) || (tempArray[2] == 1) || (tempArray[3] == 1)) {  // move table in y-axis
+                  //TableGoLeft()
+                    Serial.println("TableGoUp()");
+                }
+                else if ((tempArray[4] == 1) || (tempArray[5] == 1) || (tempArray[6] == 1)) {
+                    Serial.println("TableGoCenter()");
+                }
+                else if ((tempArray[7] == 1) || (tempArray[8] == 1) || (tempArray[9] == 1)) {
+                    Serial.println("TableGoDown(1)");
+                }
+                else {
+                    Serial.print("Wrong input. Check the sent number. The input is: ");
+                    for (int i = 0; i < 10; i++)
+                    {
+
+                        Serial.print(messageArray[i]);
+                    }
+                    Serial.println(" ");
+                }
 
             }
-            //na kraju vrati taj registar u 0
-        }
+            else if (messageArray[0] == 2) {    //desni stol
 
+
+            }
+            else {
+
+                Serial.println("Wrong table side choosen. Check input.");
+            }
+            tempArray[i] = 0;
+            Serial.println("Next movement incoming. ");
+        }
+        
 
 
 
@@ -698,4 +754,3 @@ void StopPressed() {
     digitalWrite(LED_Stop, HIGH);
 }
 
-//////////////////////////////// FUNCTIONS //////////////////////////////////////////////
