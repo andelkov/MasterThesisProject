@@ -106,6 +106,7 @@ void setup() {
 	}
 	Serial.println("Modbus registers set 0");
 
+
 	pinMode(CONTROLLINO_IN0, INPUT);                            // IN0   tipka Start
 	Mb.R[0] = CONTROLLINO_IN0; Mb.R[0] = 0;
 	pinMode(CONTROLLINO_IN1, INPUT);                            // IN1   tipka Stop
@@ -173,7 +174,7 @@ void setup() {
 	pinMode(CONTROLLINO_R8, OUTPUT);                            // R8    Aktuator 8   (up-down of body)
 	Mb.R[98] = CONTROLLINO_IN0; Mb.C[98] = 0;
 	pinMode(CONTROLLINO_R9, OUTPUT);                            // R9    Aktuator 9   (180 degree hand rotate)
-	Mb.R[99] = CONTROLLINO_IN0; Mb.C[99] = 0;
+	Mb.R[99] = CONTROLLINO_IN0; Mb.C[99] = 0; //Controllino pin configuration
 
 	pinMode(interruptStartPin, INPUT);
 	pinMode(interruptStopPin, INPUT);
@@ -198,7 +199,7 @@ void loop() {
 		Serial.println("Auto mode selected.");
 		// 1 111 111 111 dolazi:
 		loWord = lowWord(longValue);              // convert long to two words
-		hiWord = highWord(longValue);
+		hiWord = highWord(longValue);			  // add modbus register
 		message = makeLong(hiWord, loWord);
 
 		messageString = String(message);
@@ -219,48 +220,8 @@ void loop() {
 		if (messageArray[0] == 1) {
 			for (char i = 1; i < 10; i++)
 			{
-				if (messageArray[i] == 1) {
-					tempArray[i] = messageArray[i];
 
-					if ((tempArray[1] == 1) || (tempArray[4] == 1) || (tempArray[7] == 1)) { // move table in x-axis
-						Serial.println("TableGoLeft()");
-					}
-					else if ((tempArray[2] == 1) || (tempArray[5] == 1) || (tempArray[8] == 1)) {
-						Serial.println("TableGoCenter()");
-					}
-					else if ((tempArray[3] == 1) || (tempArray[6] == 1) || (tempArray[9] == 1)) {
-						Serial.println("TableGoRight()");
-					}
-					else {
-					}
 
-					if ((tempArray[1] == 1) || (tempArray[2] == 1) || (tempArray[3] == 1)) {  // move table in y-axis
-					  //TableGoLeft()
-						Serial.println("TableGoUp()");
-						Serial.println("Next movement incoming. ");
-					}
-					else if ((tempArray[4] == 1) || (tempArray[5] == 1) || (tempArray[6] == 1)) {
-						Serial.println("TableGoCenter()");
-						Serial.println("Next movement incoming. ");
-					}
-					else if ((tempArray[7] == 1) || (tempArray[8] == 1) || (tempArray[9] == 1)) {
-						Serial.println("TableGoDown(1)");
-						Serial.println("Next movement incoming. ");
-					}
-					else {
-						Serial.print("eror, lol ");
-						//        for (int i = 0; i < 10; i++)
-						//        {
-						//          Serial.print(messageArray[i]);
-						//        }
-						//        Serial.println(" ");
-					}
-
-				}
-				else {
-					Serial.println("Next iteration. ");
-				}
-				tempArray[i] = 0;
 			}
 		}
 		else {
@@ -271,7 +232,6 @@ void loop() {
 
 
 		}
-		else
 
 
 
@@ -283,8 +243,7 @@ void loop() {
 
 
 
-
-			break;
+		break;
 	case 2:
 		Serial.println("Jog mode selected");
 		break;
@@ -302,7 +261,6 @@ void loop() {
 
 
 void TableGoRight() {
-
 	if (isMoving == false) {
 
 		isMoving = true;
@@ -323,11 +281,9 @@ void TableGoRight() {
 		}
 
 	}
-
 }
 
 void TableGoLeft() {
-	// comment
 	if (isMoving == false) {
 
 		isMoving = true;
@@ -354,7 +310,26 @@ void TableGoCenter(char tableSide) {
 	// R/r/1 - left table
 	// L/l/2 - right table
 	if (tableSide == 2) {
+		if (isMoving == false) {
 
+			isMoving = true;
+			Serial.print("Going right. ");
+
+			digitalWrite(CONTROLLINO_R6, LOW);
+			digitalWrite(CONTROLLINO_R5, HIGH);
+			delay(cooldown);
+
+			//Serial.print("Move status: %b, isM ");
+
+			while (isMoving == true) {
+				Serial.print("Waiting for input from sensors C5 and C6... ");
+				if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+					isMoving = false;
+					Serial.println("Move completed.");
+				}
+			}
+
+		};
 		if (isMoving == false) {
 			isMoving = true;
 			Serial.print("Moving right table to centre. ");
@@ -372,10 +347,28 @@ void TableGoCenter(char tableSide) {
 				}
 			}
 		}
-
 	}
 	else if (tableSide == 1) {
+		if (isMoving == false) {
 
+			isMoving = true;
+			Serial.print("Going right. ");
+
+			digitalWrite(CONTROLLINO_R6, LOW);
+			digitalWrite(CONTROLLINO_R5, HIGH);
+			delay(cooldown);
+
+			//Serial.print("Move status: %b, isM ");
+
+			while (isMoving == true) {
+				Serial.print("Waiting for input from sensors C5 and C6... ");
+				if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+					isMoving = false;
+					Serial.println("Move completed.");
+				}
+			}
+
+		};
 		if (isMoving == false) {
 			isMoving = true;
 			Serial.print("Moving left table to centre. ");
@@ -405,7 +398,6 @@ void TableGoUp(char tableSide) {
 	// 2 - right table
 	// 1 - left table
 	if (tableSide == 2) {
-
 		if (isMoving == false) {
 			isMoving = true;
 			Serial.print("Moving right table up. ");
@@ -423,7 +415,6 @@ void TableGoUp(char tableSide) {
 				}
 			}
 		}
-
 	}
 	else if (tableSide == 1) {
 
@@ -458,7 +449,6 @@ void TableGoDown(char tableSide) {
 	// R/r/1 - left table
 	// L/l/2 - right table
 	if (tableSide == 2) {
-
 		if (isMoving == false) {
 			isMoving = true;
 			Serial.print("Moving right table down. ");
@@ -476,7 +466,6 @@ void TableGoDown(char tableSide) {
 				}
 			}
 		}
-
 	}
 	else if (tableSide == 1) {
 
@@ -794,6 +783,317 @@ bool isTableEmpty(byte tableSide) {
 	else {
 		return false;
 	}
+
+
+}
+
+void GoTo(byte tableSide, byte pawnPosition) {
+
+	if (tableSide == 1) {
+		if ((pawnPosition == 1) || (pawnPosition == 4) || (pawnPosition == 7)) { // move table in x-axis
+			if (isMoving == false) {
+
+				isMoving = true;
+				Serial.print("Going left. ");
+
+				digitalWrite(CONTROLLINO_R6, LOW);
+				digitalWrite(CONTROLLINO_R5, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors C5 and C6. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C5_uvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+
+			}
+		}
+		else if ((pawnPosition == 2) || (pawnPosition == 5) || (pawnPosition == 8)) {
+			if (isMoving == false) {
+
+				isMoving = true;
+				Serial.print("Going right. ");
+
+				digitalWrite(CONTROLLINO_R6, LOW);
+				digitalWrite(CONTROLLINO_R5, HIGH);
+				delay(cooldown);
+
+				//Serial.print("Move status: %b, isM ");
+
+				while (isMoving == true) {
+					Serial.print("Waiting for input from sensors C5 and C6... ");
+					if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+
+			};
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving left table to centre. ");
+
+				digitalWrite(C1_cilindar, HIGH);
+				digitalWrite(C2_cilindar, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C1 and C2. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C1_izvucen) == 1 && digitalRead(C2_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else if ((pawnPosition == 3) || (pawnPosition == 6) || (pawnPosition == 9)) {
+			if (isMoving == false) {
+
+				isMoving = true;
+				Serial.print("Going right. ");
+
+				digitalWrite(CONTROLLINO_R6, HIGH);
+				digitalWrite(CONTROLLINO_R5, HIGH);
+				delay(cooldown);
+
+				//Serial.print("Move status: %b, isM ");
+
+				while (isMoving == true) {
+					Serial.print("Waiting for input from sensors C5 and C6... ");
+					if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_izvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+
+			};
+		}
+
+		if ((pawnPosition == 1) || (pawnPosition == 2) || (pawnPosition == 3)) {
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving left table up. ");
+
+				digitalWrite(C1_cilindar, HIGH);
+				digitalWrite(C2_cilindar, HIGH);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C1 and C2. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C1_izvucen) == 1 && digitalRead(C2_izvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else if ((pawnPosition == 4) || (pawnPosition == 5) || (pawnPosition == 6)) {
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving left table to centre. ");
+
+				digitalWrite(C1_cilindar, HIGH);
+				digitalWrite(C2_cilindar, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C1 and C2. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C1_izvucen) == 1 && digitalRead(C2_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else if ((pawnPosition == 7) || (pawnPosition == 8) || (pawnPosition == 9)) {
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving left table down. ");
+
+				digitalWrite(C1_cilindar, LOW);
+				digitalWrite(C2_cilindar, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C1 and C2. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C1_uvucen) == 1 && digitalRead(C2_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else {
+			Serial.print("Incorrect format of requested position. Req. position was: ");
+			for (int i = 0; i < 10; i++)
+			{
+				Serial.print(messageArray[i]);
+			}
+			Serial.println(" ");
+		}
+
+	}
+	else if (tableSide == 2) {
+		if ((pawnPosition == 1) || (pawnPosition == 4) || (pawnPosition == 7)) {
+			if (isMoving == false) {
+
+				isMoving = true;
+				Serial.print("Going left. ");
+
+				digitalWrite(CONTROLLINO_R6, LOW);
+				digitalWrite(CONTROLLINO_R5, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors C5 and C6. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C5_uvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+
+			}
+		}
+		else if ((pawnPosition == 2) || (pawnPosition == 5) || (pawnPosition == 8)) {
+			if (isMoving == false) {
+
+				isMoving = true;
+				Serial.print("Going right. ");
+
+				digitalWrite(CONTROLLINO_R6, LOW);
+				digitalWrite(CONTROLLINO_R5, HIGH);
+				delay(cooldown);
+
+				//Serial.print("Move status: %b, isM ");
+
+				while (isMoving == true) {
+					Serial.print("Waiting for input from sensors C5 and C6... ");
+					if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+
+			};
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving right table to centre. ");
+
+				digitalWrite(C3_cilindar, HIGH);
+				digitalWrite(C4_cilindar, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C3 and C4. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else if ((pawnPosition == 3) || (pawnPosition == 6) || (pawnPosition == 9)) {
+			if (isMoving == false) {
+
+				isMoving = true;
+				Serial.print("Going right. ");
+
+				digitalWrite(CONTROLLINO_R6, HIGH);
+				digitalWrite(CONTROLLINO_R5, HIGH);
+				delay(cooldown);
+
+				//Serial.print("Move status: %b, isM ");
+
+				while (isMoving == true) {
+					Serial.print("Waiting for input from sensors C5 and C6... ");
+					if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_izvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+
+			}
+		}
+
+		if ((pawnPosition == 1) || (pawnPosition == 2) || (pawnPosition == 3)) {
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving right table up. ");
+
+				digitalWrite(C3_cilindar, HIGH);
+				digitalWrite(C4_cilindar, HIGH);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C3 and C4. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_izvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else if ((pawnPosition == 4) || (pawnPosition == 5) || (pawnPosition == 6)) {
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving right table to centre. ");
+
+				digitalWrite(C3_cilindar, HIGH);
+				digitalWrite(C4_cilindar, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C3 and C4. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else if ((pawnPosition == 7) || (pawnPosition == 8) || (pawnPosition == 9)) {
+			if (isMoving == false) {
+				isMoving = true;
+				Serial.print("Moving right table down. ");
+
+				digitalWrite(C3_cilindar, LOW);
+				digitalWrite(C4_cilindar, LOW);
+				delay(cooldown);
+
+				Serial.print("Waiting for input from sensors on C3 and C4. ");
+				while (isMoving == true) {
+
+					if (digitalRead(C3_uvucen) == 1 && digitalRead(C4_uvucen) == 1) {
+						isMoving = false;
+						Serial.println("Move completed.");
+					}
+				}
+			}
+		}
+		else {
+			Serial.print("Incorrect format of requested position. Req. position was: ");
+			for (int i = 0; i < 10; i++)
+			{
+				Serial.print(messageArray[i]);
+			}
+			Serial.println(" ");
+		}
+	}
+	else {
+		Serial.println("Wrong table side number choosen.");
+	}
+
 
 
 }
