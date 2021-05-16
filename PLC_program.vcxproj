@@ -116,7 +116,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties arduino.upload.port="COM3" config.Debug.customdebug_CONTROLLINO_Boards_controllino_boards_avr_controllino_maxi_automation_debugger_type="universal" />
+      <UserProperties arduino.upload.port="COM5" config.Debug.customdebug_CONTROLLINO_Boards_controllino_boards_avr_controllino_maxi_automation_debugger_type="universal" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

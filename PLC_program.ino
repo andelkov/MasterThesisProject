@@ -29,16 +29,18 @@ byte i;
 byte tableSide;
 String arrayPart;
 String messageString;
-char selectHand = 1;
-char handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
-byte workMode = 1;                 // Select work mode (1-Auto, 2-Jog)
+byte selectHand = 1;
+byte handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
+byte workMode = 0;                 // Select work mode (1-Auto, 2-Jog)
+
 bool isUp = false;                 // Body is or isn't in elevated position.    
 bool isMoving = false;             // The manipulator is or isn't moving.
 
-char tableLeft[10] = { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1 };//Actual state left table
-char tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 };//Actual state right table
+byte tableLeft[10] = { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1 };//Actual state left table
+byte tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 };//Actual state right table
 int tempArray[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
+//Pin configuration:
 const byte C1_cilindar = CONTROLLINO_R1; // R1    Cilindar 1
 const byte C2_cilindar = CONTROLLINO_R2; // R2    Cilindar 2
 
@@ -78,14 +80,14 @@ const byte LED_Stop = CONTROLLINO_D7;    // DO7   svjetlo Stop
 const byte handIsRight = 66;             // DI0   senzor C7.0, ruka je sad desno
 const byte handIsLeft = 67;              // DI1   senzor C7.1, ruka je sad lijevo
 
-const byte objectGrabbed_V1 = 10;        // DI2   senzor vakuum 1
-const byte objectGrabbed_V2 = 11;        // DI3   senzor vakuum 2
+const byte pawnGrabbed_V1 = 10;        // DI2   senzor vakuum 1
+const byte pawnGrabbed_V2 = 11;        // DI3   senzor vakuum 2
 
 const byte interruptStartPin = 18;       // IN0   interrupt ulaz, Start tipka
 volatile byte startPressed = LOW;
 
 const byte interruptStopPin = 19;        // IN1   interrupt ulaz, Stop tipka
-volatile byte stopPressed = LOW;                                                       //Pin configuration
+volatile byte stopPressed = LOW;
 
 void setup() {
 	uint8_t mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x51, 0x06 };
@@ -199,9 +201,8 @@ void loop() {
 		Serial.println("Auto mode selected.");
 		// 1 111 111 111 dolazi:
 		loWord = lowWord(longValue);              // convert long to two words
-		hiWord = highWord(longValue);			  // add modbus register
+		hiWord = highWord(longValue);			  // add modbus register here
 		message = makeLong(hiWord, loWord);
-
 		messageString = String(message);
 
 		for (char i = 0; i < 10; i++) {
@@ -209,29 +210,29 @@ void loop() {
 			messageArray[i] = arrayPart.toInt();
 		}
 
-		Serial.print("The final end result is: ");    //printanje arraya
+		Serial.print("Our message array is: ");    //printanje arraya
 		for (int i = 0; i < 10; i++)
 		{
 			Serial.print(messageArray[i]);
 		}
 		// Now we have our message in an array.
-		// Move head to specific point:
-		// if moving to a left table
+
+
+		if (Mb.R[5] != 0 ) {
+
+		}
 		if (messageArray[0] == 1) {
-			for (char i = 1; i < 10; i++)
-			{
+			
+
+		}
+		else if (messageArray[0] == 2) {    //desni stol
 
 
-			}
 		}
 		else {
 			Serial.println("Wrong table side choosen. Check input.");
 		}
 
-		if (messageArray[0] == 2) {    //desni stol
-
-
-		}
 
 
 
@@ -242,7 +243,7 @@ void loop() {
 
 
 
-
+		Mb.R[5] = 0;
 		break;
 	case 2:
 		Serial.println("Jog mode selected");
@@ -259,7 +260,7 @@ void loop() {
 
 //////////////////////////////// FUNCTIONS //////////////////////////////////////////////
 
-
+//////////////////////////////// FOR JOG MODE
 void TableGoRight() {
 	if (isMoving == false) {
 
@@ -588,8 +589,6 @@ void RotateLeft() {
 }
 
 void SelectHand(char selectHand) {
-
-
 	if (isMoving == false) {
 		// 1-lower suction (default)
 		// 2-upper suction
@@ -705,29 +704,25 @@ void LiftDown() {
 	}
 }
 
-void Vacuum1(char state) {
-
-
+void GrabPawn() {
 	if (isMoving == false) {
 
 		isMoving = true;
-		Serial.print("Going right. ");
+		Serial.print("Grabbing the pawn with vacuum.. ");
 
-		digitalWrite(CONTROLLINO_R6, HIGH);
-		digitalWrite(CONTROLLINO_R5, HIGH);
+		digitalWrite(Vacuum_1, HIGH);
 		delay(cooldown);
 
-		Serial.print("Waiting for input from sensors C5 and C6. ");
+		Serial.print("Waiting for input from vacuum sensor 1.. ");
 		while (isMoving == true) {
 
-			if (C5_izvucen == 1 && C6_izvucen == 1) {
+			if (pawnGrabbed_V1 ==  1) {
 				isMoving = false;
 				Serial.println("Move completed.");
 			}
 		}
 
 	}
-
 }
 
 void StartPressed() {
@@ -786,7 +781,7 @@ bool isTableEmpty(byte tableSide) {
 
 
 }
-
+//////////////////////////////// FOR AUTO MODE
 void GoTo(byte tableSide, byte pawnPosition) {
 
 	if (tableSide == 1) {
@@ -1095,6 +1090,117 @@ void GoTo(byte tableSide, byte pawnPosition) {
 	}
 
 
+
+}
+void PickUpPawn() {
+	if (isMoving == false) {
+		isMoving = true;
+
+		digitalWrite(C8_cilindar, HIGH);
+		delay(cooldown);
+
+		isUp = false;
+		isMoving = false;
+	}
+	//vacuum upaliti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
+	if (isMoving == false) {
+		isMoving = true;
+
+		digitalWrite(C8_cilindar, LOW);
+		delay(cooldown);
+
+		isUp = true;
+		isMoving = false;
+	}
+	if (isMoving == false) {
+		// 1-lower suction (default)
+		// 2-upper suction
+		isMoving = true;
+		Serial.print("Initiating hand selection. ");
+
+		switch (selectHand)
+		{
+		case 1:
+
+			if (C9_cilindar == LOW)
+			{
+				isMoving = false;
+				Serial.println("Hand 1 selected. ");
+			}
+			else
+			{
+				digitalWrite(C8_cilindar, LOW);
+				delay(cooldown);
+
+				digitalWrite(C9_cilindar, LOW);
+				delay(cooldown);
+
+				if (handSlot[0] == 0)
+				{
+					digitalWrite(C8_cilindar, HIGH);
+					delay(cooldown);
+
+					isMoving = false;
+					Serial.println("Hand 1 selected. ");
+				}
+				else if (handSlot[0] == 1)
+				{
+					digitalWrite(C8_cilindar, LOW);
+					delay(cooldown);
+
+					isMoving = false;
+					Serial.println("Hand 1 selected. ");
+				}
+				else
+				{
+					isMoving = false;
+					Serial.println("Hand 1 selected. ");
+				}
+			}
+			break;
+		case 2:
+			if (C9_cilindar == HIGH)
+			{
+				isMoving = false;
+				Serial.println("Hand 1 selected. ");
+			}
+			else
+			{
+				digitalWrite(C8_cilindar, LOW);
+				delay(cooldown);
+
+				digitalWrite(C9_cilindar, HIGH);
+				delay(cooldown);
+
+				if (handSlot[0] == 0)
+				{
+					digitalWrite(C8_cilindar, HIGH);
+					delay(cooldown);
+
+					isMoving = false;
+					Serial.println("Hand 1 selected. ");
+				}
+				else if (handSlot[0] == 1)
+				{
+					digitalWrite(C8_cilindar, LOW);
+					delay(cooldown);
+
+					isMoving = false;
+					Serial.println("Hand 1 selected. ");
+				}
+				else
+				{
+					isMoving = false;
+					Serial.println("Hand 1 selected. ");
+				}
+			}
+			break;
+		default:
+			Serial.println("Incorret option selected. Aborting sequence...");
+			isMoving = false;
+			break;
+		}
+	}
 
 }
 
