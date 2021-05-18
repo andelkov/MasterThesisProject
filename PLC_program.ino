@@ -1,4 +1,4 @@
-#include <Controllino.h>
+﻿#include <Controllino.h>
 #include <SPI.h>
 #include <Ethernet.h>
 #include "Mudbus.h"
@@ -14,7 +14,7 @@ Mudbus Mb;
 //signed int Mb.R[0 to 125]
 //Port 502 is default (defined by MB_PORT, in Mudbus.h) 
 
-int cooldown = 1000;                // Time between movement/valve activations 
+int cooldown = 600;                // Time between movement/valve activations in ms
 int counter = 0;
 char selectMode;
 
@@ -80,8 +80,8 @@ const byte LED_Stop = CONTROLLINO_D7;    // DO7   svjetlo Stop
 const byte handIsRight = 66;             // DI0   senzor C7.0, ruka je sad desno
 const byte handIsLeft = 67;              // DI1   senzor C7.1, ruka je sad lijevo
 
-const byte pawnGrabbed_V1 = 10;        // DI2   senzor vakuum 1
-const byte pawnGrabbed_V2 = 11;        // DI3   senzor vakuum 2
+const byte pawnGrabbed_V1 = 10;          // DI2   senzor vakuum 1
+const byte pawnGrabbed_V2 = 11;          // DI3   senzor vakuum 2
 
 const byte interruptStartPin = 18;       // IN0   interrupt ulaz, Start tipka
 volatile byte startPressed = LOW;
@@ -218,20 +218,21 @@ void loop() {
 		// Now we have our message in an array.
 
 
-		if (Mb.R[5] != 0 ) {
+		if (Mb.R[5] != 0) {
 
-		}
-		if (messageArray[0] == 1) {
-			
-
-		}
-		else if (messageArray[0] == 2) {    //desni stol
+			if (messageArray[0] == 1) {
 
 
+			}
+			else if (messageArray[0] == 2) {    //desni stol
+
+
+			}
+			else {
+				Serial.println("Wrong table side choosen. Check input.");
+			}
 		}
-		else {
-			Serial.println("Wrong table side choosen. Check input.");
-		}
+
 
 
 
@@ -716,7 +717,7 @@ void GrabPawn() {
 		Serial.print("Waiting for input from vacuum sensor 1.. ");
 		while (isMoving == true) {
 
-			if (pawnGrabbed_V1 ==  1) {
+			if (pawnGrabbed_V1 == 1) {
 				isMoving = false;
 				Serial.println("Move completed.");
 			}
@@ -1092,11 +1093,11 @@ void GoTo(byte tableSide, byte pawnPosition) {
 
 
 }
-void PickUpPawn() {
+void PawnPickUpBeta() {
 	if (isMoving == false) {
 		isMoving = true;
 
-		digitalWrite(C8_cilindar, HIGH);
+		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
 		delay(cooldown);
 
 		isUp = false;
@@ -1203,4 +1204,77 @@ void PickUpPawn() {
 	}
 
 }
+void PawnPickUpNeo() {
+	if (isMoving == false) {
+		isMoving = true;
 
+		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
+		delay(cooldown);
+
+		isUp = false;
+		isMoving = false;
+	}
+	//vacuum upaliti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
+	if (isMoving == false) {
+		isMoving = true;
+		Serial.print("Initiating vacuum activation. ");
+
+		digitalWrite(Vacuum_1, HIGH);
+		delay(cooldown);
+
+		while (isMoving == true) {
+
+			if (pawnGrabbed_V1 == 1) {
+				isMoving = false;
+				Serial.println("Move completed.");
+			}
+		}
+	}
+	if (isMoving == false) {
+		isMoving = true;
+
+		digitalWrite(C8_cilindar, LOW);
+		delay(cooldown);
+
+		isUp = true;
+		isMoving = false;
+	}
+	if (isMoving == false) {
+		isMoving = true;
+
+		digitalWrite(C9_cilindar, HIGH);
+		delay(cooldown);
+
+		isUp = true;
+		isMoving = false;
+	}
+	
+}
+void PawnDrop() {
+	if (isMoving == false) {
+		isMoving = true;
+
+		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
+		delay(cooldown);
+
+		isUp = false;
+		isMoving = false;
+	}
+	//vacuum isključiti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
+	if (isMoving == false) {
+		isMoving = true;
+		Serial.print("Initiating vacuum activation. ");
+
+		digitalWrite(Vacuum_1, LOW);
+		delay(cooldown);
+	}
+	if (isMoving == false) {
+		isMoving = true;
+
+		digitalWrite(C8_cilindar, LOW);
+		delay(cooldown);
+
+		isUp = true;
+		isMoving = false;
+	}
+}
