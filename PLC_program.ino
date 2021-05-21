@@ -26,6 +26,7 @@ uint32_t loWord, hiWord;
 int messageArray[10];
 
 byte i;
+byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
 String arrayPart;
 String messageString;
@@ -222,29 +223,66 @@ void loop() {
 
 			if (messageArray[0] == 1) {
 
+				for (byte j = 1; j < 10; j++) {
 
+					if (messageArray[j] == 1) {
+						//ako već nema figura tamo na tom mjestu
+						if (tableLeft[j] != 1) {
+							//nadji prvu dostupnu desno i odi tamo
+							pawnTemp = FindAvailablePawn(2);
+							if (pawnTemp != 0) {
+								RotateRight();
+								GoTo(2, pawnTemp);
+								PawnPickUpNeo();
+								tableRight[pawnTemp] = 0;
+
+								//nazad na željeni stol
+								RotateLeft();
+								GoTo(1, j);
+								PawnDrop;
+								tableLeft[j] = 1;
+							}
+							else {
+								Serial.println("No pawns available at right table");
+							}
+						}
+					}
+				}
 			}
-			else if (messageArray[0] == 2) {    //desni stol
+			else if (messageArray[0] == 2) {
+				for (byte j = 1; j < 10; j++) {
 
+					if (messageArray[j] == 1) {
+						//ako već nema figura tamo na tom mjestu
+						if (tableRight[j] != 1) {
+							//nadji prvu dostupnu lijevo i odi tamo
+							pawnTemp = FindAvailablePawn(1);
+							if (pawnTemp != 0) {
+								RotateLeft();
+								GoTo(1, pawnTemp);
+								PawnPickUpNeo();
+								tableLeft[pawnTemp] = 0;
 
+								//nazad na trazeni stol
+								RotateRight();
+								GoTo(2, j);
+								PawnDrop;
+								tableRight[j] = 1;
+							}
+							else {
+								Serial.println("No pawns available at right table");
+							}
+						}
+					}
+				}
 			}
 			else {
 				Serial.println("Wrong table side choosen. Check input.");
 			}
+
+			Mb.R[5] = 0;
 		}
 
-
-
-
-
-
-
-
-
-
-
-
-		Mb.R[5] = 0;
 		break;
 	case 2:
 		Serial.println("Jog mode selected");
@@ -1248,7 +1286,7 @@ void PawnPickUpNeo() {
 		isUp = true;
 		isMoving = false;
 	}
-	
+
 }
 void PawnDrop() {
 	if (isMoving == false) {
@@ -1277,4 +1315,41 @@ void PawnDrop() {
 		isUp = true;
 		isMoving = false;
 	}
+}
+byte FindAvailablePawn(byte tableSide) {
+	byte pawn;
+	byte n = 0;
+	//možda bude problem pretvoriti INT u BYTE
+	if (tableSide == 1) {
+		while (n == 0) {
+			for (i = 1; i < 11; i++) {
+				if (tableLeft[i] == 1) {
+					n = i;
+					pawn = i;
+				}
+				else if (tableLeft[10] == 0) {
+					n = 1;
+					pawn = 0;
+				}
+			}
+		}
+	}
+	else if (tableSide == 2) {
+		while (n == 0) {
+			for (i = 1; i < 11; i++) {
+				if (tableRight[i] == 1) {
+					n = i;
+					pawn = i;
+				}
+				else if (tableRight[10] == 0) {
+					n = 1;
+					pawn = 0;
+				}
+			}
+		}
+	}
+	else {
+		pawn = 0;
+	}
+	return pawn;
 }
