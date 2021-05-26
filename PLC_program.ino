@@ -22,9 +22,12 @@ unsigned long longValue = 111111111;
 unsigned long message;
 
 uint32_t loWord, hiWord;
-int messageArray[9];
+int messageArray[10];
 
+int messageArray1[10] = { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 byte delete1 = 0;
+bool digiRead = true; //pleae delete immediately
+
 unsigned int temp1 = 0;
 unsigned int temp2 = 0;
 byte i;
@@ -194,7 +197,7 @@ void setup() {
 //////////////////////////////// MAIN //////////////////////////////////////////////
 void loop() {
 
-	while ( Mb.R[0] != 1 ) {
+	while (Mb.R[0] != 1) {
 		digitalWrite(LED_Start, 0);
 		delay(500);
 		Mb.Run();
@@ -212,24 +215,26 @@ void loop() {
 		temp1 = Mb.R[5];
 		temp2 = Mb.R[6];
 		message = makeLong(temp1, temp2);
-		messageString = String(message);
+		messageString = 111111111; //String(message);
 		Serial.print(" The re-converted received message is: ");
 		Serial.println(messageString);
 
 		if (messageString.length() == 9) {
-			for (char i = 0; i < 10; i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i] = arrayPart.toInt();	
-			}
-		}
-		else if (messageString.length() < 9) {
-			for (char i = 0; i < (9 - messageString.length() ); i++) {
-				messageArray[i] = 0;
-			}
-			for (char i = (9-messageString.length()); i < messageString.length(); i++) {
+			for (char i = 1; i < 11; i++) {
 				arrayPart = messageString.charAt(i);
 				messageArray[i] = arrayPart.toInt();
 			}
+			messageArray[0] = 0;
+		}
+		else if (messageString.length() < 9) {
+			for (char i = 1; i < (10 - messageString.length()); i++) {
+				messageArray[i] = 0;
+			}
+			for (char i = (10 - messageString.length()); i < messageString.length(); i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i] = arrayPart.toInt();
+			}
+			messageArray[0] = 0;
 
 		}
 
@@ -243,9 +248,9 @@ void loop() {
 		Serial.println("Proceeding to move the head.");
 
 		if (Mb.R[5] != 0) {
-
-			if (Mb.R[10] == 1) {
-
+			//možda tu ubaciti konverziju dva 16bit u 32bit jedan
+			if (Mb.R[9] == 1) {
+				Serial.println("Filling table 1.");
 				for (byte j = 1; j < 10; j++) {
 
 					if (messageArray[j] == 1) {
@@ -262,8 +267,30 @@ void loop() {
 								//nazad na željeni stol
 								RotateLeft();
 								GoTo(1, j);
+
 								PawnDrop;
 								tableLeft[j] = 1;
+
+							}
+							else {
+								Serial.println("No pawns available at right table");
+							}
+						}
+					}
+					else if (messageArray[j] == 0) {
+						if (tableLeft[j] == 1) {
+							pawnTemp = FindFreeSpot(2); //dobit ćemo broj od 1-9
+							if (pawnTemp != 0) {
+								RotateLeft();
+								GoTo(1, j);
+								PawnPickUpNeo();
+								tableLeft[1] = 0;
+
+								//nazad na željeni stol
+								RotateRight();
+								GoTo(2, pawnTemp);
+								PawnDrop;
+								tableRight[pawnTemp] = 1;
 							}
 							else {
 								Serial.println("No pawns available at right table");
@@ -272,7 +299,8 @@ void loop() {
 					}
 				}
 			}
-			else if (Mb.R[10] == 2) {
+			else if (Mb.R[9] == 2) {
+				Serial.println("Filling table 2.");
 				for (byte j = 1; j < 10; j++) {
 
 					if (messageArray[j] == 1) {
@@ -297,6 +325,25 @@ void loop() {
 							}
 						}
 					}
+					else if (messageArray[j] == 0) {
+						if (tableRight[j] == 1) {
+							pawnTemp = FindFreeSpot(1); //dobit ćemo broj od 1-9
+							if (pawnTemp != 0) {
+								RotateRight();
+								GoTo(1, j);
+								PawnPickUpNeo();
+								tableRight[1] = 0;
+
+								RotateLeft();
+								GoTo(2, pawnTemp);
+								PawnDrop();
+								tableLeft[pawnTemp] = 1;
+							}
+							else {
+								Serial.println("No pawns available at right table");
+							}
+						}
+					}
 				}
 			}
 			else {
@@ -311,7 +358,26 @@ void loop() {
 
 		break;
 	case 2:
-		Serial.println("Jog mode selected");
+
+		RotateLeft();
+		isMoving = true;
+		Serial.print("Moving right table up. ");
+
+		digitalWrite(C3_cilindar, HIGH);
+		digitalWrite(C4_cilindar, HIGH);
+		delay(cooldown);
+
+		Serial.print("Waiting for input from sensors on C3 and C4. ");
+		while (isMoving == true) {
+
+			if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_izvucen) == 1) {
+				isMoving = false;
+				Serial.println("Move completed.");
+			}
+		}
+		Serial.print("Finished wat u want. ");
+
+		/*Serial.println("Jog mode selected");
 		temp1 = Mb.R[5];
 		temp2 = Mb.R[6];
 		message = makeLong(temp1, temp2);
@@ -323,13 +389,60 @@ void loop() {
 			digitalWrite(LED_Start, 1);
 			digitalWrite(CONTROLLINO_D6, 1);
 
-		}
+		}*/
 		break;
 	case 3:
-		temp1 = Mb.R[2];
-		temp2 = Mb.R[3];
-		digitalWrite(LED_Start, temp1);
-		digitalWrite(CONTROLLINO_D6, temp2);
+		Serial.println("Filling table 2.");
+
+		for (byte j = 1; j < 10; j++) {
+
+			if (messageArray1[j] == 1) {
+				//ako već nema figura tamo na tom mjestu
+				if (tableRight[j] == 0) {
+					Serial.println("Finding available pawn.");
+					pawnTemp = FindAvailablePawn(1);
+					Serial.print("Found pawn: ");
+					Serial.println(pawnTemp);
+
+					if (pawnTemp != 0) {
+						RotateLeft();
+						GoTo(1, pawnTemp);
+						PawnPickUpNeo();
+						tableLeft[pawnTemp] = 0;
+
+						//nazad na trazeni stol
+						RotateRight();
+						Serial.println("Finished rotating.");
+						GoTo(2, j);
+						Serial.println("Finished going to selected pawn.");
+						PawnDrop;
+						tableRight[j] = 1;
+					}
+					else {
+						Serial.println("No pawns available at right table");
+					}
+				}
+			}
+			else if (messageArray1[j] == 0) {
+				if (tableRight[j] == 1) {
+					pawnTemp = FindFreeSpot(1); //dobit ćemo broj od 1-9
+					if (pawnTemp != 0) {
+						RotateRight();
+						GoTo(1, j);
+						PawnPickUpNeo();
+						tableRight[1] = 0;
+
+						RotateLeft();
+						GoTo(2, pawnTemp);
+						PawnDrop();
+						tableLeft[pawnTemp] = 1;
+					}
+					else {
+						Serial.println("No pawns available at right table");
+					}
+				}
+			}
+		}
 		break;
 	default:
 		Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
@@ -628,7 +741,7 @@ void RotateLeft() {
 	if (isMoving == false && (isUp == true)) //maybe add "|| handSlot[0] == 0"
 	{
 		isMoving = true;
-		Serial.print("Rotating to the right.");
+		Serial.print("The hand is up. Rotating to the left.");
 
 		digitalWrite(C7_cilindar, LOW);
 		delay(cooldown);
@@ -644,14 +757,14 @@ void RotateLeft() {
 	else if (isMoving == false && (isUp == false)) //maybe add "|| handSlot[0] == 0"
 	{
 		isMoving = true;
-		Serial.print("Rotating to the right.");
+		Serial.print("The hand is down. Rotating to the left.");
 
 		digitalWrite(C8_cilindar, LOW);
 		delay(cooldown);
 
 		isUp = true;
 
-		digitalWrite(C7_cilindar, HIGH);
+		digitalWrite(C7_cilindar, LOW);
 		delay(cooldown);
 
 		while (isMoving == true) {
@@ -799,7 +912,7 @@ void GrabPawn() {
 		Serial.print("Waiting for input from vacuum sensor 1.. ");
 		while (isMoving == true) {
 
-			if (pawnGrabbed_V1 == 1) {
+			if (digitalRead(pawnGrabbed_V1) == 1) {
 				isMoving = false;
 				Serial.println("Move completed.");
 			}
@@ -869,6 +982,7 @@ bool isTableEmpty(byte tableSide) {
 void GoTo(byte tableSide, byte pawnPosition) {
 
 	if (tableSide == 1) {
+
 		if ((pawnPosition == 1) || (pawnPosition == 4) || (pawnPosition == 7)) { // move table in x-axis
 			if (isMoving == false) {
 
@@ -957,14 +1071,14 @@ void GoTo(byte tableSide, byte pawnPosition) {
 				isMoving = true;
 				Serial.print("Moving left table up. ");
 
-				digitalWrite(C1_cilindar, HIGH);
-				digitalWrite(C2_cilindar, HIGH);
+				digitalWrite(C1_cilindar, LOW);
+				digitalWrite(C2_cilindar, LOW);
 				delay(cooldown);
 
 				Serial.print("Waiting for input from sensors on C1 and C2. ");
 				while (isMoving == true) {
 
-					if (digitalRead(C1_izvucen) == 1 && digitalRead(C2_izvucen) == 1) {
+					if (digitalRead(C1_uvucen) == 1 && digitalRead(C2_uvucen) == 1) {
 						isMoving = false;
 						Serial.println("Move completed.");
 					}
@@ -995,14 +1109,14 @@ void GoTo(byte tableSide, byte pawnPosition) {
 				isMoving = true;
 				Serial.print("Moving left table down. ");
 
-				digitalWrite(C1_cilindar, LOW);
-				digitalWrite(C2_cilindar, LOW);
+				digitalWrite(C1_cilindar, HIGH);
+				digitalWrite(C2_cilindar, HIGH);
 				delay(cooldown);
 
 				Serial.print("Waiting for input from sensors on C1 and C2. ");
 				while (isMoving == true) {
 
-					if (digitalRead(C1_uvucen) == 1 && digitalRead(C2_uvucen) == 1) {
+					if (digitalRead(C1_izvucen) == 1 && digitalRead(C2_izvucen) == 1) {
 						isMoving = false;
 						Serial.println("Move completed.");
 					}
@@ -1020,6 +1134,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 
 	}
 	else if (tableSide == 2) {
+
 		if ((pawnPosition == 1) || (pawnPosition == 4) || (pawnPosition == 7)) {
 			if (isMoving == false) {
 
@@ -1305,12 +1420,9 @@ void PawnPickUpNeo() {
 		digitalWrite(Vacuum_1, HIGH);
 		delay(cooldown);
 
-		while (isMoving == true) {
-
-			if (pawnGrabbed_V1 == 1) {
-				isMoving = false;
-				Serial.println("Move completed.");
-			}
+		if (digitalRead(pawnGrabbed_V1) == 1) {
+			isMoving = false;
+			Serial.println("Move completed.");
 		}
 	}
 	if (isMoving == false) {
@@ -1420,7 +1532,7 @@ byte FindFreeSpot(byte tableSide) {
 	else if (tableSide == 2) {
 		while (n == 0) {
 			for (i = 1; i < 10; i++) {
-				if (tableRight[i] == 0 ) {
+				if (tableRight[i] == 0) {
 					n = i;
 					pawn = i;
 				}
