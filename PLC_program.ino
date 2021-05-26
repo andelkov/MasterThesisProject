@@ -18,13 +18,15 @@ int cooldown = 600;                // Time between movement/valve activations in
 int counter = 0;
 char selectMode;
 
-unsigned long longValue = 1011111111;
+unsigned long longValue = 111111111;
 unsigned long message;
 
-
 uint32_t loWord, hiWord;
-int messageArray[10];
+int messageArray[9];
 
+byte delete1 = 0;
+unsigned int temp1 = 0;
+unsigned int temp2 = 0;
 byte i;
 byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
@@ -40,6 +42,8 @@ bool isMoving = false;             // The manipulator is or isn't moving.
 byte tableLeft[10] = { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1 };//Actual state left table
 byte tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 };//Actual state right table
 int tempArray[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+byte selectTable = Mb.R[10];
 
 //Pin configuration:
 const byte C1_cilindar = CONTROLLINO_R1; // R1    Cilindar 1
@@ -92,9 +96,9 @@ volatile byte stopPressed = LOW;
 
 void setup() {
 	uint8_t mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x51, 0x06 };
-	uint8_t ip[] = { 192, 168, 1, 8 };
-	uint8_t gateway[] = { 192, 168, 1, 1 };
-	uint8_t subnet[] = { 255, 255, 255, 0 };
+	uint8_t ip[] = { 161, 53, 117, 212 };
+	uint8_t gateway[] = { 161, 53, 116, 1 };
+	uint8_t subnet[] = { 255, 255, 252, 0 };
 	Ethernet.begin(mac, ip, subnet);
 
 	delay(2000);
@@ -104,16 +108,12 @@ void setup() {
 	Serial.print("My IP address: ");
 	Serial.println(Ethernet.localIP());
 
-	for (i = 0; i < 126; i++) {                                 // Set every Modbus register value to 0
-		Mb.R[i] = 0;
-	}
-	Serial.println("Modbus registers set 0");
 
 
 	pinMode(CONTROLLINO_IN0, INPUT);                            // IN0   tipka Start
-	Mb.R[0] = CONTROLLINO_IN0; Mb.R[0] = 0;
+	Mb.R[0] = CONTROLLINO_IN0;
 	pinMode(CONTROLLINO_IN1, INPUT);                            // IN1   tipka Stop
-	Mb.R[1] = CONTROLLINO_IN1; Mb.R[1] = 0;
+	Mb.R[1] = CONTROLLINO_IN1;
 
 	pinMode(CONTROLLINO_A0, INPUT);                             // AI0   senzor C1.0
 	Mb.R[69] = CONTROLLINO_IN1;
@@ -177,59 +177,82 @@ void setup() {
 	pinMode(CONTROLLINO_R8, OUTPUT);                            // R8    Aktuator 8   (up-down of body)
 	Mb.R[98] = CONTROLLINO_IN0; Mb.C[98] = 0;
 	pinMode(CONTROLLINO_R9, OUTPUT);                            // R9    Aktuator 9   (180 degree hand rotate)
-	Mb.R[99] = CONTROLLINO_IN0; Mb.C[99] = 0; //Controllino pin configuration
+	Mb.R[99] = CONTROLLINO_IN0; Mb.C[99] = 0;
 
 	pinMode(interruptStartPin, INPUT);
 	pinMode(interruptStopPin, INPUT);
 
 	attachInterrupt(digitalPinToInterrupt(interruptStartPin), StartPressed, FALLING);
 	attachInterrupt(digitalPinToInterrupt(interruptStopPin), StopPressed, RISING);
+
+	for (i = 0; i < 125; i++) {                                 // Set every Modbus register value to 0
+		Mb.R[i] = 0;
+	}
+	Serial.println("Modbus registers set to 0.");
 }
 
 //////////////////////////////// MAIN //////////////////////////////////////////////
 void loop() {
 
-	Mb.Run();
-
-	if ((startPressed == LOW) || (Mb.R[0] != 1)) {
-		digitalWrite(LED_Start, HIGH);
-		delay(1000);
-		digitalWrite(LED_Start, LOW);
+	while ( Mb.R[0] != 1 ) {
+		digitalWrite(LED_Start, 0);
+		delay(500);
+		Mb.Run();
+		digitalWrite(LED_Start, 1);
+		delay(500);
+		Mb.Run();
 	}
 
-	switch (workMode) {
-	case 1:
-		Serial.println("Auto mode selected.");
-		// 1 111 111 111 dolazi:
-		loWord = lowWord(longValue);              // convert long to two words
-		hiWord = highWord(longValue);			  // add modbus register here
-		message = makeLong(hiWord, loWord);
-		messageString = String(message);
+	Mb.Run();
 
-		for (char i = 0; i < 10; i++) {
-			arrayPart = messageString.charAt(i);
-			messageArray[i] = arrayPart.toInt();
+	switch (Mb.R[3]) {
+	case 1:
+		Serial.println(" Auto mode selected.");
+		// 1 111 111 111 dolazi:
+		temp1 = Mb.R[5];
+		temp2 = Mb.R[6];
+		message = makeLong(temp1, temp2);
+		messageString = String(message);
+		Serial.print(" The re-converted received message is: ");
+		Serial.println(messageString);
+
+		if (messageString.length() == 9) {
+			for (char i = 0; i < 10; i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i] = arrayPart.toInt();	
+			}
+		}
+		else if (messageString.length() < 9) {
+			for (char i = 0; i < (9 - messageString.length() ); i++) {
+				messageArray[i] = 0;
+			}
+			for (char i = (9-messageString.length()); i < messageString.length(); i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i] = arrayPart.toInt();
+			}
+
 		}
 
-		Serial.print("Our message array is: ");    //printanje arraya
+		Serial.print("Our message Int array is: ");    //printanje arraya
 		for (int i = 0; i < 10; i++)
 		{
 			Serial.print(messageArray[i]);
-		}
+		} Serial.println(" ");
 		// Now we have our message in an array.
 
+		Serial.println("Proceeding to move the head.");
 
 		if (Mb.R[5] != 0) {
 
-			if (messageArray[0] == 1) {
+			if (Mb.R[10] == 1) {
 
 				for (byte j = 1; j < 10; j++) {
 
 					if (messageArray[j] == 1) {
-						//ako već nema figura tamo na tom mjestu
+						//ako već nema figura tamo na tom mjestu:
 						if (tableLeft[j] != 1) {
 							//nadji prvu dostupnu desno i odi tamo
-							pawnTemp = FindAvailablePawn(2);
+							pawnTemp = FindAvailablePawn(2); //dobit ćemo broj od 1-9
 							if (pawnTemp != 0) {
 								RotateRight();
 								GoTo(2, pawnTemp);
@@ -249,7 +272,7 @@ void loop() {
 					}
 				}
 			}
-			else if (messageArray[0] == 2) {
+			else if (Mb.R[10] == 2) {
 				for (byte j = 1; j < 10; j++) {
 
 					if (messageArray[j] == 1) {
@@ -283,9 +306,30 @@ void loop() {
 			Mb.R[5] = 0;
 		}
 
+
+
+
 		break;
 	case 2:
 		Serial.println("Jog mode selected");
+		temp1 = Mb.R[5];
+		temp2 = Mb.R[6];
+		message = makeLong(temp1, temp2);
+		messageString = String(message);
+		Serial.println(messageString);
+
+		if (message == longValue) {
+			Serial.println("Fackin success, mate!!!!1");
+			digitalWrite(LED_Start, 1);
+			digitalWrite(CONTROLLINO_D6, 1);
+
+		}
+		break;
+	case 3:
+		temp1 = Mb.R[2];
+		temp2 = Mb.R[3];
+		digitalWrite(LED_Start, temp1);
+		digitalWrite(CONTROLLINO_D6, temp2);
 		break;
 	default:
 		Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
@@ -779,6 +823,7 @@ void StartPressed() {
 void StopPressed() {
 	Serial.println("Stop pressed.");
 	Mb.R[1] = 1;
+	Mb.R[0] = 0;
 	digitalWrite(LED_Stop, HIGH);
 }
 
@@ -1292,7 +1337,7 @@ void PawnDrop() {
 	if (isMoving == false) {
 		isMoving = true;
 
-		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
+		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li ce se spustiti dolje!!!
 		delay(cooldown);
 
 		isUp = false;
@@ -1305,6 +1350,7 @@ void PawnDrop() {
 
 		digitalWrite(Vacuum_1, LOW);
 		delay(cooldown);
+		isMoving = false;
 	}
 	if (isMoving == false) {
 		isMoving = true;
@@ -1322,12 +1368,12 @@ byte FindAvailablePawn(byte tableSide) {
 	//možda bude problem pretvoriti INT u BYTE
 	if (tableSide == 1) {
 		while (n == 0) {
-			for (i = 1; i < 11; i++) {
+			for (i = 1; i < 10; i++) {
 				if (tableLeft[i] == 1) {
 					n = i;
 					pawn = i;
 				}
-				else if (tableLeft[10] == 0) {
+				else if (tableLeft[9] == 0) {
 					n = 1;
 					pawn = 0;
 				}
@@ -1336,12 +1382,49 @@ byte FindAvailablePawn(byte tableSide) {
 	}
 	else if (tableSide == 2) {
 		while (n == 0) {
-			for (i = 1; i < 11; i++) {
+			for (i = 1; i < 10; i++) {
 				if (tableRight[i] == 1) {
 					n = i;
 					pawn = i;
 				}
-				else if (tableRight[10] == 0) {
+				else if (tableRight[9] == 0) {
+					n = 1;
+					pawn = 0;
+				}
+			}
+		}
+	}
+	else {
+		pawn = 0;
+	}
+	return pawn;
+}
+byte FindFreeSpot(byte tableSide) {
+	byte pawn;
+	byte n = 0;
+	//možda bude problem pretvoriti INT u BYTE
+	if (tableSide == 1) {
+		while (n == 0) {
+			for (i = 1; i < 10; i++) {
+				if (tableLeft[i] == 0) {
+					n = i;
+					pawn = i;
+				}
+				else if (tableLeft[9] == 1) {
+					n = 1;
+					pawn = 0;
+				}
+			}
+		}
+	}
+	else if (tableSide == 2) {
+		while (n == 0) {
+			for (i = 1; i < 10; i++) {
+				if (tableRight[i] == 0 ) {
+					n = i;
+					pawn = i;
+				}
+				else if (tableRight[9] == 1) {
 					n = 1;
 					pawn = 0;
 				}
