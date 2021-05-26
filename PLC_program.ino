@@ -24,7 +24,7 @@ unsigned long message;
 uint32_t loWord, hiWord;
 int messageArray[10];
 
-int messageArray1[10] = { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+int	messageArray1[10] = { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 byte delete1 = 0;
 bool digiRead = true; //pleae delete immediately
 
@@ -359,13 +359,27 @@ void loop() {
 		break;
 	case 2:
 
-		RotateLeft();
-		for (byte j = 1; j < 10; j++) {
-			GoTo(1, j);
+		pawnTemp = 1;
+		Serial.print("Found pawn on position: ");
+		Serial.println(pawnTemp);
+
+		if (pawnTemp != 0) {
+			RotateLeft();
+			GoTo(1, pawnTemp);
+			PawnPickUpNeo();
+			tableLeft[pawnTemp] = 0;
+
+			//nazad na trazeni stol
+			RotateRight();
+			Serial.println("Finished rotating.");
+			GoTo(2, 4);
+			Serial.println("Finished going to selected pawn.");
+
+			PawnDrop();
+			Serial.println("Dropped the pawn for fs.");
 		}
-		RotateRight();
-		for (byte j = 1; j < 10; j++) {
-			GoTo(2, j);
+		else {
+			Serial.println("No pawns available at right table");
 		}
 
 
@@ -408,7 +422,8 @@ void loop() {
 						Serial.println("Finished rotating.");
 						GoTo(2, j);
 						Serial.println("Finished going to selected pawn.");
-						PawnDrop;
+						PawnDrop();
+						Serial.println("Dropped the pawn.");
 						tableRight[j] = 1;
 					}
 					else {
@@ -437,6 +452,8 @@ void loop() {
 			}
 		}
 
+		break;
+	case 4:
 		break;
 	default:
 		Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
@@ -1440,64 +1457,42 @@ void PawnPickUpNeo() {
 
 }
 void PawnDrop() {
-	if (isMoving == false) {
-		isMoving = true;
 
-		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li ce se spustiti dolje!!!
-		delay(cooldown);
+	digitalWrite(C9_cilindar, LOW);
+	delay(cooldown);
+	digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li ce se spustiti dolje!!!
+	delay(cooldown);
 
-		isUp = false;
-		isMoving = false;
-	}
-	//vacuum isključiti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
-	if (isMoving == false) {
-		isMoving = true;
-		Serial.print("Initiating vacuum activation. ");
+	Serial.print("Initiating vacuum de-activation. ");
+	digitalWrite(Vacuum_1, LOW); //vacuum isključiti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
 
-		digitalWrite(Vacuum_1, LOW);
-		delay(cooldown);
-		isMoving = false;
-	}
-	if (isMoving == false) {
-		isMoving = true;
 
-		digitalWrite(C8_cilindar, LOW);
-		delay(cooldown);
+	digitalWrite(C8_cilindar, LOW);
 
-		isUp = true;
-		isMoving = false;
-	}
+	delay(cooldown);
+
 }
 byte FindAvailablePawn(byte tableSide) {
-	byte pawn;
-	byte n = 0;
+	byte pawn = 0;
+	byte n = 1;
+	byte i = 0;
 	//možda bude problem pretvoriti INT u BYTE
 	if (tableSide == 1) {
-		while (n == 0) {
-			for (i = 1; i < 10; i++) {
-				if (tableLeft[i] == 1) {
-					n = i;
-					pawn = i;
-				}
-				else if (tableLeft[9] == 0) {
-					n = 1;
-					pawn = 0;
-				}
+		while (i == 0) {
+			if (tableLeft[n] == 1) {
+				i = 1;
+				pawn = n;
 			}
+			n = n + 1;
 		}
 	}
 	else if (tableSide == 2) {
-		while (n == 0) {
-			for (i = 1; i < 10; i++) {
-				if (tableRight[i] == 1) {
-					n = i;
-					pawn = i;
-				}
-				else if (tableRight[9] == 0) {
-					n = 1;
-					pawn = 0;
-				}
+		while (i == 0) {
+			if (tableRight[n] == 1) {
+				i = 1;
+				pawn = n;
 			}
+			n = n + 1;
 		}
 	}
 	else {
