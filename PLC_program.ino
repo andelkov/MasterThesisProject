@@ -360,22 +360,15 @@ void loop() {
 	case 2:
 
 		RotateLeft();
-		isMoving = true;
-		Serial.print("Moving right table up. ");
-
-		digitalWrite(C3_cilindar, HIGH);
-		digitalWrite(C4_cilindar, HIGH);
-		delay(cooldown);
-
-		Serial.print("Waiting for input from sensors on C3 and C4. ");
-		while (isMoving == true) {
-
-			if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_izvucen) == 1) {
-				isMoving = false;
-				Serial.println("Move completed.");
-			}
+		for (byte j = 1; j < 10; j++) {
+			GoTo(1, j);
 		}
-		Serial.print("Finished wat u want. ");
+		RotateRight();
+		for (byte j = 1; j < 10; j++) {
+			GoTo(2, j);
+		}
+
+
 
 		/*Serial.println("Jog mode selected");
 		temp1 = Mb.R[5];
@@ -443,6 +436,7 @@ void loop() {
 				}
 			}
 		}
+
 		break;
 	default:
 		Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
@@ -1223,14 +1217,14 @@ void GoTo(byte tableSide, byte pawnPosition) {
 				isMoving = true;
 				Serial.print("Moving right table up. ");
 
-				digitalWrite(C3_cilindar, HIGH);
-				digitalWrite(C4_cilindar, HIGH);
+				digitalWrite(C3_cilindar, LOW);
+				digitalWrite(C4_cilindar, LOW);
 				delay(cooldown);
 
 				Serial.print("Waiting for input from sensors on C3 and C4. ");
 				while (isMoving == true) {
 
-					if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_izvucen) == 1) {
+					if (digitalRead(C3_uvucen) == 1 && digitalRead(C4_uvucen) == 1) {
 						isMoving = false;
 						Serial.println("Move completed.");
 					}
@@ -1261,14 +1255,14 @@ void GoTo(byte tableSide, byte pawnPosition) {
 				isMoving = true;
 				Serial.print("Moving right table down. ");
 
-				digitalWrite(C3_cilindar, LOW);
-				digitalWrite(C4_cilindar, LOW);
+				digitalWrite(C3_cilindar, HIGH);
+				digitalWrite(C4_cilindar, HIGH);
 				delay(cooldown);
 
 				Serial.print("Waiting for input from sensors on C3 and C4. ");
 				while (isMoving == true) {
 
-					if (digitalRead(C3_uvucen) == 1 && digitalRead(C4_uvucen) == 1) {
+					if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_izvucen) == 1) {
 						isMoving = false;
 						Serial.println("Move completed.");
 					}
