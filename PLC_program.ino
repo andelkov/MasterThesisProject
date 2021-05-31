@@ -211,44 +211,44 @@ void loop() {
 	switch (Mb.R[3]) {
 	case 1:
 		Serial.println(" Auto mode selected.");
-		// 1 111 111 111 dolazi:
-		temp1 = Mb.R[5];
-		temp2 = Mb.R[6];
-		message = makeLong(temp1, temp2);
-		messageString = 111111111; //String(message);
-		Serial.print(" The re-converted received message is: ");
-		Serial.println(messageString);
-
-		if (messageString.length() == 9) {
-			for (char i = 1; i < 11; i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i] = arrayPart.toInt();
-			}
-			messageArray[0] = 0;
-		}
-		else if (messageString.length() < 9) {
-			for (char i = 1; i < (10 - messageString.length()); i++) {
-				messageArray[i] = 0;
-			}
-			for (char i = (10 - messageString.length()); i < messageString.length(); i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i] = arrayPart.toInt();
-			}
-			messageArray[0] = 0;
-
-		}
-
-		Serial.print("Our message Int array is: ");    //printanje arraya
-		for (int i = 0; i < 10; i++)
-		{
-			Serial.print(messageArray[i]);
-		} Serial.println(" ");
-		// Now we have our message in an array.
-
-		Serial.println("Proceeding to move the head.");
+		//  111 111 111 dolazi:
 
 		if (Mb.R[5] != 0) {
 			//možda tu ubaciti konverziju dva 16bit u 32bit jedan
+			temp1 = Mb.R[5];
+			temp2 = Mb.R[6];
+			message = makeLong(temp1, temp2);
+			messageString = message; //String(message);
+			Serial.print(" The re-converted received message is: ");
+			Serial.println(messageString);
+
+			if (messageString.length() == 9) {
+				for (char i = 0; i < 9; i++) {
+					arrayPart = messageString.charAt(i);
+					messageArray[i + 1] = arrayPart.toInt();
+				}
+				messageArray[0] = 0;
+			}
+			else if (messageString.length() < 9) {
+				for (char i = 0; i < messageString.length(); i++) {
+					arrayPart = messageString.charAt(i);
+					messageArray[i + (10 - messageString.length())] = arrayPart.toInt();
+				}
+				for (char i = 1; i < (10 - messageString.length()); i++) {
+					messageArray[i] = 0;
+				}
+				messageArray[0] = NULL;
+				//0 000 000 001
+			}
+
+			Serial.print("Our message Int array is: ");    //printanje arraya
+			for (int i = 0; i < 10; i++)
+			{
+				Serial.print(messageArray[i]);
+			} Serial.println(" ");
+
+			Serial.println("Proceeding to move the head.");
+
 			if (Mb.R[9] == 1) {
 				Serial.println("Filling table 1.");
 				for (byte j = 1; j < 10; j++) {
@@ -268,7 +268,7 @@ void loop() {
 								RotateLeft();
 								GoTo(1, j);
 
-								PawnDrop;
+								PawnDrop();
 								tableLeft[j] = 1;
 
 							}
@@ -289,7 +289,7 @@ void loop() {
 								//nazad na željeni stol
 								RotateRight();
 								GoTo(2, pawnTemp);
-								PawnDrop;
+								PawnDrop();
 								tableRight[pawnTemp] = 1;
 							}
 							else {
@@ -317,7 +317,7 @@ void loop() {
 								//nazad na trazeni stol
 								RotateRight();
 								GoTo(2, j);
-								PawnDrop;
+								PawnDrop();
 								tableRight[j] = 1;
 							}
 							else {
@@ -353,9 +353,6 @@ void loop() {
 			Mb.R[5] = 0;
 		}
 
-
-
-
 		break;
 	case 2:
 
@@ -381,22 +378,6 @@ void loop() {
 		else {
 			Serial.println("No pawns available at right table");
 		}
-
-
-
-		/*Serial.println("Jog mode selected");
-		temp1 = Mb.R[5];
-		temp2 = Mb.R[6];
-		message = makeLong(temp1, temp2);
-		messageString = String(message);
-		Serial.println(messageString);
-
-		if (message == longValue) {
-			Serial.println("Fackin success, mate!!!!1");
-			digitalWrite(LED_Start, 1);
-			digitalWrite(CONTROLLINO_D6, 1);
-
-		}*/
 		break;
 	case 3:
 		Serial.println("Filling table 2.");
@@ -451,10 +432,48 @@ void loop() {
 				}
 			}
 		}
-
+		Serial.println("Finished the transport. ");
+		Mb.R[3] = 4;
 		break;
 	case 4:
 		break;
+	case 5:
+		//možda tu ubaciti konverziju dva 16bit u 32bit jedan
+		temp1 = Mb.R[5];
+		temp2 = Mb.R[6];
+		message = makeLong(temp1, temp2);
+		messageString = message; //String(message);
+		Serial.print(" The re-converted received message is: ");
+		Serial.println(messageString);
+
+		if (messageString.length() == 9) {
+			for (char i = 0; i < 9; i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i+1] = arrayPart.toInt();
+			}
+			messageArray[0] = 0;
+		}
+		else if (messageString.length() < 9) {
+			for (char i =0; i < messageString.length(); i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i+(10-messageString.length())] = arrayPart.toInt();
+			}
+			for (char i = 1; i < (10 - messageString.length()); i++) {
+				messageArray[i] = 0;
+			}
+			messageArray[0] = NULL;
+			//0 000 000 001
+		}
+
+		Serial.print("Our message Int array is: ");    //printanje arraya
+		for (int i = 0; i < 10; i++)
+		{
+			Serial.print(messageArray[i]);
+		} Serial.println(" ");
+
+		Mb.R[3] = 4;
+		break;
+		
 	default:
 		Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
 	}
@@ -1414,51 +1433,27 @@ void PawnPickUpBeta() {
 
 }
 void PawnPickUpNeo() {
-	if (isMoving == false) {
-		isMoving = true;
-
-		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
-		delay(cooldown);
-
-		isUp = false;
-		isMoving = false;
-	}
-	//vacuum upaliti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
-	if (isMoving == false) {
-		isMoving = true;
+	
 		Serial.print("Initiating vacuum activation. ");
 
-		digitalWrite(Vacuum_1, HIGH);
-		delay(cooldown);
-
-		if (digitalRead(pawnGrabbed_V1) == 1) {
-			isMoving = false;
-			Serial.println("Move completed.");
+		while (digitalRead(pawnGrabbed_V1) != 1) { // staviti OR ako nije start upaljen
+			digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
+			delay(cooldown);
+			digitalWrite(Vacuum_1, HIGH);
+			delay(cooldown);
+			digitalWrite(C8_cilindar, LOW);
+			delay(cooldown);
 		}
-	}
-	if (isMoving == false) {
-		isMoving = true;
-
-		digitalWrite(C8_cilindar, LOW);
-		delay(cooldown);
-
-		isUp = true;
-		isMoving = false;
-	}
-	if (isMoving == false) {
-		isMoving = true;
-
+		
 		digitalWrite(C9_cilindar, HIGH);
 		delay(cooldown);
-
-		isUp = true;
-		isMoving = false;
-	}
+		Serial.print("Pawn is picked up. ");
 
 }
 void PawnDrop() {
 
 	digitalWrite(C9_cilindar, LOW);
+	delay(cooldown);
 	delay(cooldown);
 	digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li ce se spustiti dolje!!!
 	delay(cooldown);
