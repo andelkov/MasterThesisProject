@@ -34,6 +34,7 @@ byte i;
 byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
 String arrayPart;
+String alreadyShown = " ";
 String messageString;
 byte selectHand = 1;
 byte handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
@@ -198,6 +199,10 @@ void setup() {
 void loop() {
 
 	while (Mb.R[0] != 1) {
+		if (alreadyShown != "Ready to start. ") {
+			alreadyShown = "Ready to start. ";
+			Serial.println(alreadyShown);
+		}
 		digitalWrite(LED_Start, 0);
 		delay(500);
 		Mb.Run();
@@ -210,45 +215,46 @@ void loop() {
 
 	switch (Mb.R[3]) {
 	case 1:
-		Serial.println(" Auto mode selected.");
-		//  111 111 111 dolazi:
+		if (alreadyShown != "Auto-mode selected.") {
+			alreadyShown = "Auto-mode selected.";
+			Serial.println(alreadyShown);
+		}
+		temp1 = Mb.R[5];
+		temp2 = Mb.R[6];
+		message = makeLong(temp1, temp2);
+		messageString = String(message); //String(message);
 
-		if (Mb.R[5] != 0) {
-			//možda tu ubaciti konverziju dva 16bit u 32bit jedan
-			temp1 = Mb.R[5];
-			temp2 = Mb.R[6];
-			message = makeLong(temp1, temp2);
-			messageString = message; //String(message);
-			Serial.print(" The re-converted received message is: ");
-			Serial.println(messageString);
 
-			if (messageString.length() == 9) {
-				for (char i = 0; i < 9; i++) {
-					arrayPart = messageString.charAt(i);
-					messageArray[i + 1] = arrayPart.toInt();
-				}
-				messageArray[0] = 0;
+		Serial.print(" The re-converted received message is: ");
+		Serial.println(messageString);
+
+		if (messageString.length() == 9) {
+			for (char i = 0; i < 9; i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i + 1] = arrayPart.toInt();
 			}
-			else if (messageString.length() < 9) {
-				for (char i = 0; i < messageString.length(); i++) {
-					arrayPart = messageString.charAt(i);
-					messageArray[i + (10 - messageString.length())] = arrayPart.toInt();
-				}
-				for (char i = 1; i < (10 - messageString.length()); i++) {
-					messageArray[i] = 0;
-				}
-				messageArray[0] = NULL;
-				//0 000 000 001
+			messageArray[0] = 0;
+		}
+		else if (messageString.length() < 9) {
+			for (char i = 0; i < messageString.length(); i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i + (10 - messageString.length())] = arrayPart.toInt();
 			}
+			for (char i = 1; i < (10 - messageString.length()); i++) {
+				messageArray[i] = 0;
+			}
+			messageArray[0] = NULL;
+			//0 000 000 001
+		}
 
-			Serial.print("Our message Int array is: ");    //printanje arraya
-			for (int i = 0; i < 10; i++)
-			{
-				Serial.print(messageArray[i]);
-			} Serial.println(" ");
+		Serial.print("Our message Int array is: ");    //printanje arraya
+		for (int i = 1; i < 10; i++)
+		{
+			Serial.print(messageArray[i]);
+		} Serial.println(" ");
 
-			Serial.println("Proceeding to move the head.");
 
+		if (messageString.length() < 10) {
 			if (Mb.R[9] == 1) {
 				Serial.println("Filling table 1.");
 				for (byte j = 1; j < 10; j++) {
@@ -298,6 +304,11 @@ void loop() {
 						}
 					}
 				}
+				if (alreadyShown != "Auto-mode transfer completed.") {
+					alreadyShown = "Auto-mode transfer completed.";
+					Serial.println(" ");
+					Serial.println(alreadyShown);
+				}
 			}
 			else if (Mb.R[9] == 2) {
 				Serial.println("Filling table 2.");
@@ -345,137 +356,29 @@ void loop() {
 						}
 					}
 				}
+				if (alreadyShown != "Auto-mode transfer completed.") {
+					alreadyShown = "Auto-mode transfer completed.";
+					Serial.println(" ");
+					Serial.println(alreadyShown);
+				}
 			}
 			else {
 				Serial.println("Wrong table side choosen. Check input.");
 			}
 
-			Mb.R[5] = 0;
+
 		}
+		Mb.R[3] = 10;
 
-		break;
-	case 2:
-
-		pawnTemp = 1;
-		Serial.print("Found pawn on position: ");
-		Serial.println(pawnTemp);
-
-		if (pawnTemp != 0) {
-			RotateLeft();
-			GoTo(1, pawnTemp);
-			PawnPickUpNeo();
-			tableLeft[pawnTemp] = 0;
-
-			//nazad na trazeni stol
-			RotateRight();
-			Serial.println("Finished rotating.");
-			GoTo(2, 4);
-			Serial.println("Finished going to selected pawn.");
-
-			PawnDrop();
-			Serial.println("Dropped the pawn for fs.");
-		}
-		else {
-			Serial.println("No pawns available at right table");
-		}
-		break;
-	case 3:
-		Serial.println("Filling table 2.");
-
-		for (byte j = 1; j < 10; j++) {
-
-			if (messageArray1[j] == 1) {
-				//ako već nema figura tamo na tom mjestu
-				if (tableRight[j] == 0) {
-					Serial.println("Finding available pawn.");
-					pawnTemp = FindAvailablePawn(1);
-					Serial.print("Found pawn: ");
-					Serial.println(pawnTemp);
-
-					if (pawnTemp != 0) {
-						RotateLeft();
-						GoTo(1, pawnTemp);
-						PawnPickUpNeo();
-						tableLeft[pawnTemp] = 0;
-
-						//nazad na trazeni stol
-						RotateRight();
-						Serial.println("Finished rotating.");
-						GoTo(2, j);
-						Serial.println("Finished going to selected pawn.");
-						PawnDrop();
-						Serial.println("Dropped the pawn.");
-						tableRight[j] = 1;
-					}
-					else {
-						Serial.println("No pawns available at right table");
-					}
-				}
-			}
-			else if (messageArray1[j] == 0) {
-				if (tableRight[j] == 1) {
-					pawnTemp = FindFreeSpot(1); //dobit ćemo broj od 1-9
-					if (pawnTemp != 0) {
-						RotateRight();
-						GoTo(1, j);
-						PawnPickUpNeo();
-						tableRight[1] = 0;
-
-						RotateLeft();
-						GoTo(2, pawnTemp);
-						PawnDrop();
-						tableLeft[pawnTemp] = 1;
-					}
-					else {
-						Serial.println("No pawns available at right table");
-					}
-				}
-			}
-		}
-		Serial.println("Finished the transport. ");
-		Mb.R[3] = 4;
 		break;
 	case 4:
 		break;
-	case 5:
-		//možda tu ubaciti konverziju dva 16bit u 32bit jedan
-		temp1 = Mb.R[5];
-		temp2 = Mb.R[6];
-		message = makeLong(temp1, temp2);
-		messageString = message; //String(message);
-		Serial.print(" The re-converted received message is: ");
-		Serial.println(messageString);
-
-		if (messageString.length() == 9) {
-			for (char i = 0; i < 9; i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i+1] = arrayPart.toInt();
-			}
-			messageArray[0] = 0;
-		}
-		else if (messageString.length() < 9) {
-			for (char i =0; i < messageString.length(); i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i+(10-messageString.length())] = arrayPart.toInt();
-			}
-			for (char i = 1; i < (10 - messageString.length()); i++) {
-				messageArray[i] = 0;
-			}
-			messageArray[0] = NULL;
-			//0 000 000 001
-		}
-
-		Serial.print("Our message Int array is: ");    //printanje arraya
-		for (int i = 0; i < 10; i++)
-		{
-			Serial.print(messageArray[i]);
-		} Serial.println(" ");
-
-		Mb.R[3] = 4;
-		break;
-		
 	default:
-		Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
+		if (alreadyShown != "Please select a valid option [1-Auto mode, 2-Jog mode].") {
+			alreadyShown = "Please select a valid option [1-Auto mode, 2-Jog mode].";
+			Serial.println(alreadyShown);
+		}
+		break;
 	}
 
 
@@ -1433,21 +1336,21 @@ void PawnPickUpBeta() {
 
 }
 void PawnPickUpNeo() {
-	
-		Serial.print("Initiating vacuum activation. ");
 
-		while (digitalRead(pawnGrabbed_V1) != 1) { // staviti OR ako nije start upaljen
-			digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
-			delay(cooldown);
-			digitalWrite(Vacuum_1, HIGH);
-			delay(cooldown);
-			digitalWrite(C8_cilindar, LOW);
-			delay(cooldown);
-		}
-		
-		digitalWrite(C9_cilindar, HIGH);
+	Serial.print("Initiating vacuum activation. ");
+
+	while (digitalRead(pawnGrabbed_V1) != 1) { // staviti OR ako nije start upaljen
+		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
 		delay(cooldown);
-		Serial.print("Pawn is picked up. ");
+		digitalWrite(Vacuum_1, HIGH);
+		delay(cooldown);
+		digitalWrite(C8_cilindar, LOW);
+		delay(cooldown);
+	}
+
+	digitalWrite(C9_cilindar, HIGH);
+	delay(cooldown);
+	Serial.print("Pawn is picked up. ");
 
 }
 void PawnDrop() {
