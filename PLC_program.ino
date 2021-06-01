@@ -14,7 +14,7 @@ Mudbus Mb;
 //signed int Mb.R[0 to 125]
 //Port 502 is default (defined by MB_PORT, in Mudbus.h) 
 
-int cooldown = 600;                // Time between movement/valve activations in ms
+int cooldown = 1000;                // Time between movement/valve activations in ms
 int counter = 0;
 char selectMode;
 
@@ -34,6 +34,7 @@ byte i;
 byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
 String arrayPart;
+String debugMessage = " ";
 String messageString;
 byte selectHand = 1;
 byte handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
@@ -41,6 +42,7 @@ byte workMode = 0;                 // Select work mode (1-Auto, 2-Jog)
 
 bool isUp = false;                 // Body is or isn't in elevated position.    
 bool isMoving = false;             // The manipulator is or isn't moving.
+bool isHandFull = false;
 
 byte tableLeft[10] = { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1 };//Actual state left table
 byte tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 };//Actual state right table
@@ -198,6 +200,10 @@ void setup() {
 void loop() {
 
 	while (Mb.R[0] != 1) {
+		if (debugMessage != "Ready to start. ") {
+			debugMessage = "Ready to start. ";
+			Serial.println(debugMessage);
+		}
 		digitalWrite(LED_Start, 0);
 		delay(500);
 		Mb.Run();
@@ -207,48 +213,50 @@ void loop() {
 	}
 
 	Mb.Run();
-
+	//možda else if bolje umjesto switch??
 	switch (Mb.R[3]) {
 	case 1:
-		Serial.println(" Auto mode selected.");
-		//  111 111 111 dolazi:
+		if (debugMessage != "Auto-mode selected.") {
+			debugMessage = "Auto-mode selected. ";
+			Serial.println(debugMessage);
+		}
 
-		if (Mb.R[5] != 0) {
-			//možda tu ubaciti konverziju dva 16bit u 32bit jedan
-			temp1 = Mb.R[5];
-			temp2 = Mb.R[6];
-			message = makeLong(temp1, temp2);
-			messageString = message; //String(message);
-			Serial.print(" The re-converted received message is: ");
-			Serial.println(messageString);
+		temp1 = Mb.R[5];
+		temp2 = Mb.R[6];
+		message = makeLong(temp1, temp2);
+		messageString = String(message); //String(message);
 
-			if (messageString.length() == 9) {
-				for (char i = 0; i < 9; i++) {
-					arrayPart = messageString.charAt(i);
-					messageArray[i + 1] = arrayPart.toInt();
-				}
-				messageArray[0] = 0;
+
+		Serial.print(" The re-converted received message is: ");
+		Serial.println(messageString);
+
+		if (messageString.length() == 9) {
+			for (char i = 0; i < 9; i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i + 1] = arrayPart.toInt();
 			}
-			else if (messageString.length() < 9) {
-				for (char i = 0; i < messageString.length(); i++) {
-					arrayPart = messageString.charAt(i);
-					messageArray[i + (10 - messageString.length())] = arrayPart.toInt();
-				}
-				for (char i = 1; i < (10 - messageString.length()); i++) {
-					messageArray[i] = 0;
-				}
-				messageArray[0] = NULL;
-				//0 000 000 001
+			messageArray[0] = 0;
+		}
+		else if (messageString.length() < 9) {
+			for (char i = 0; i < messageString.length(); i++) {
+				arrayPart = messageString.charAt(i);
+				messageArray[i + (10 - messageString.length())] = arrayPart.toInt();
 			}
+			for (char i = 1; i < (10 - messageString.length()); i++) {
+				messageArray[i] = 0;
+			}
+			messageArray[0] = NULL;
+			//0 000 000 001
+		}
 
-			Serial.print("Our message Int array is: ");    //printanje arraya
-			for (int i = 0; i < 10; i++)
-			{
-				Serial.print(messageArray[i]);
-			} Serial.println(" ");
+		Serial.print("Our message Int array is: ");    //printanje arraya
+		for (int i = 1; i < 10; i++)
+		{
+			Serial.print(messageArray[i]);
+		} Serial.println(" ");
 
-			Serial.println("Proceeding to move the head.");
 
+		if (messageString.length() < 10) {
 			if (Mb.R[9] == 1) {
 				Serial.println("Filling table 1.");
 				for (byte j = 1; j < 10; j++) {
@@ -298,6 +306,11 @@ void loop() {
 						}
 					}
 				}
+				if (debugMessage != "Auto-mode transfer completed.") {
+					debugMessage = "Auto-mode transfer completed.";
+					Serial.println(" ");
+					Serial.println(debugMessage);
+				}
 			}
 			else if (Mb.R[9] == 2) {
 				Serial.println("Filling table 2.");
@@ -332,7 +345,7 @@ void loop() {
 								RotateRight();
 								GoTo(1, j);
 								PawnPickUpNeo();
-								tableRight[1] = 0;
+								tableRight[j] = 0;
 
 								RotateLeft();
 								GoTo(2, pawnTemp);
@@ -345,137 +358,95 @@ void loop() {
 						}
 					}
 				}
+				if (debugMessage != "Auto-mode transfer completed.") {
+					debugMessage = "Auto-mode transfer completed.";
+					Serial.println(" ");Serial.println(debugMessage);Serial.println(" ");
+
+				}
 			}
 			else {
 				Serial.println("Wrong table side choosen. Check input.");
 			}
 
-			Mb.R[5] = 0;
+
 		}
+		Mb.R[3] = 10;
 
 		break;
 	case 2:
-
-		pawnTemp = 1;
-		Serial.print("Found pawn on position: ");
-		Serial.println(pawnTemp);
-
-		if (pawnTemp != 0) {
-			RotateLeft();
-			GoTo(1, pawnTemp);
-			PawnPickUpNeo();
-			tableLeft[pawnTemp] = 0;
-
-			//nazad na trazeni stol
-			RotateRight();
-			Serial.println("Finished rotating.");
-			GoTo(2, 4);
-			Serial.println("Finished going to selected pawn.");
-
-			PawnDrop();
-			Serial.println("Dropped the pawn for fs.");
+		if (debugMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
+			debugMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
+			Serial.println(debugMessage);
 		}
-		else {
-			Serial.println("No pawns available at right table");
-		}
-		break;
-	case 3:
-		Serial.println("Filling table 2.");
+		if ((Mb.R[9] == 1) || (Mb.R[9] == 2)) {
+			if ((Mb.R[10] >= 1) && (Mb.R[10] <= 9)) {
 
-		for (byte j = 1; j < 10; j++) {
-
-			if (messageArray1[j] == 1) {
-				//ako već nema figura tamo na tom mjestu
-				if (tableRight[j] == 0) {
-					Serial.println("Finding available pawn.");
-					pawnTemp = FindAvailablePawn(1);
-					Serial.print("Found pawn: ");
-					Serial.println(pawnTemp);
-
-					if (pawnTemp != 0) {
+				if (Mb.R[9] == 1) {
+					if ( (isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == false) ) {
 						RotateLeft();
-						GoTo(1, pawnTemp);
-						PawnPickUpNeo();
-						tableLeft[pawnTemp] = 0;
-
-						//nazad na trazeni stol
-						RotateRight();
-						Serial.println("Finished rotating.");
-						GoTo(2, j);
-						Serial.println("Finished going to selected pawn.");
+						GoTo(1, Mb.R[10]);
 						PawnDrop();
-						Serial.println("Dropped the pawn.");
-						tableRight[j] = 1;
+						tableLeft[Mb.R[10]] = 1;
+
+						Mb.R[9] = 2;
+						Mb.R[10] = 0;
+						isHandFull == false;
+					}
+					else if (IsSpotEmpty(1, Mb.R[10]) == false) {
+						RotateLeft();
+						GoTo(1, Mb.R[10]);
+						PawnPickUpNeo();
+						tableLeft[Mb.R[10]] = 0;
+
+						Mb.R[9] = 2;
+						Mb.R[10] = 0;
+						isHandFull = true;
 					}
 					else {
-						Serial.println("No pawns available at right table");
+						Serial.println("The choosen position on the left table is empty.");
 					}
 				}
-			}
-			else if (messageArray1[j] == 0) {
-				if (tableRight[j] == 1) {
-					pawnTemp = FindFreeSpot(1); //dobit ćemo broj od 1-9
-					if (pawnTemp != 0) {
+				else if (Mb.R[9] == 2) {
+					if ((isHandFull == true) && (IsSpotEmpty(2, Mb.R[10]) == false)) {
 						RotateRight();
-						GoTo(1, j);
-						PawnPickUpNeo();
-						tableRight[1] = 0;
-
-						RotateLeft();
-						GoTo(2, pawnTemp);
+						GoTo(2, Mb.R[10]);
 						PawnDrop();
-						tableLeft[pawnTemp] = 1;
+						tableRight[Mb.R[10]] = 1;
+
+						Mb.R[9] = 1;
+						Mb.R[10] = 0;
+						isHandFull == false;
+					}
+					else if (IsSpotEmpty(2, Mb.R[10]) == false) {
+						RotateRight();
+						GoTo(2, Mb.R[10]);
+						PawnPickUpNeo();
+						tableRight[Mb.R[10]] = 0;
+
+						Mb.R[9] = 1;
+						Mb.R[10] = 0;
+						isHandFull = true;
 					}
 					else {
-						Serial.println("No pawns available at right table");
+						if (debugMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
+							debugMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
+							Serial.println(debugMessage);
+						}
 					}
 				}
+
 			}
 		}
-		Serial.println("Finished the transport. ");
-		Mb.R[3] = 4;
+
 		break;
 	case 4:
 		break;
-	case 5:
-		//možda tu ubaciti konverziju dva 16bit u 32bit jedan
-		temp1 = Mb.R[5];
-		temp2 = Mb.R[6];
-		message = makeLong(temp1, temp2);
-		messageString = message; //String(message);
-		Serial.print(" The re-converted received message is: ");
-		Serial.println(messageString);
-
-		if (messageString.length() == 9) {
-			for (char i = 0; i < 9; i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i+1] = arrayPart.toInt();
-			}
-			messageArray[0] = 0;
-		}
-		else if (messageString.length() < 9) {
-			for (char i =0; i < messageString.length(); i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i+(10-messageString.length())] = arrayPart.toInt();
-			}
-			for (char i = 1; i < (10 - messageString.length()); i++) {
-				messageArray[i] = 0;
-			}
-			messageArray[0] = NULL;
-			//0 000 000 001
-		}
-
-		Serial.print("Our message Int array is: ");    //printanje arraya
-		for (int i = 0; i < 10; i++)
-		{
-			Serial.print(messageArray[i]);
-		} Serial.println(" ");
-
-		Mb.R[3] = 4;
-		break;
-		
 	default:
-		Serial.println("Please select a valid option [1-Auto mode, 2-Jog mode].");
+		if (debugMessage != "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
+			debugMessage = "Please select a valid option [1-Auto mode, 2-Jog mode].";
+			Serial.println(debugMessage);
+		}
+		break;
 	}
 
 
@@ -488,26 +459,26 @@ void loop() {
 
 //////////////////////////////// FOR JOG MODE
 void TableGoRight() {
-	if (isMoving == false) {
 
-		isMoving = true;
-		Serial.print("Going right. ");
 
-		digitalWrite(CONTROLLINO_R6, HIGH);
-		digitalWrite(CONTROLLINO_R5, HIGH);
-		delay(cooldown);
+	isMoving = true;
+	Serial.print("Going right. ");
 
-		//Serial.print("Move status: %b, isM ");
+	digitalWrite(CONTROLLINO_R6, HIGH);
+	digitalWrite(CONTROLLINO_R5, HIGH);
+	delay(cooldown);
 
-		while (isMoving == true) {
-			Serial.print("Waiting for input from sensors C5 and C6... ");
-			if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_izvucen) == 1) {
-				isMoving = false;
-				Serial.println("Move completed.");
-			}
+	//Serial.print("Move status: %b, isM ");
+
+	while (isMoving == true) {
+		Serial.print("Waiting for input from sensors C5 and C6... ");
+		if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_izvucen) == 1) {
+			isMoving = false;
+			Serial.println("Move completed.");
 		}
-
 	}
+
+
 }
 
 void TableGoLeft() {
@@ -1009,6 +980,28 @@ bool isTableEmpty(byte tableSide) {
 
 }
 //////////////////////////////// FOR AUTO MODE
+bool IsSpotEmpty(byte tableSide, byte pawnPosition) {
+	//treba testirat ovo
+	if (tableSide == 1) {
+		if (tableLeft[pawnPosition] == 1) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	else if (tableSide == 2) {
+		if (tableLeft[pawnPosition] == 1) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	else {
+		Serial.println("Wrong table side choosen for checking if spot is empty.");
+	}
+}
 void GoTo(byte tableSide, byte pawnPosition) {
 
 	if (tableSide == 1) {
@@ -1321,133 +1314,23 @@ void GoTo(byte tableSide, byte pawnPosition) {
 
 
 }
-void PawnPickUpBeta() {
-	if (isMoving == false) {
-		isMoving = true;
+void PawnPickUpNeo() {
 
+	Serial.print("Initiating vacuum activation. ");
+
+	while (digitalRead(pawnGrabbed_V1) != 1) { // staviti OR ako nije start upaljen
 		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
 		delay(cooldown);
-
-		isUp = false;
-		isMoving = false;
-	}
-	//vacuum upaliti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
-	if (isMoving == false) {
-		isMoving = true;
-
+		digitalWrite(Vacuum_1, HIGH);
+		delay(cooldown);
 		digitalWrite(C8_cilindar, LOW);
 		delay(cooldown);
-
-		isUp = true;
-		isMoving = false;
-	}
-	if (isMoving == false) {
-		// 1-lower suction (default)
-		// 2-upper suction
-		isMoving = true;
-		Serial.print("Initiating hand selection. ");
-
-		switch (selectHand)
-		{
-		case 1:
-
-			if (C9_cilindar == LOW)
-			{
-				isMoving = false;
-				Serial.println("Hand 1 selected. ");
-			}
-			else
-			{
-				digitalWrite(C8_cilindar, LOW);
-				delay(cooldown);
-
-				digitalWrite(C9_cilindar, LOW);
-				delay(cooldown);
-
-				if (handSlot[0] == 0)
-				{
-					digitalWrite(C8_cilindar, HIGH);
-					delay(cooldown);
-
-					isMoving = false;
-					Serial.println("Hand 1 selected. ");
-				}
-				else if (handSlot[0] == 1)
-				{
-					digitalWrite(C8_cilindar, LOW);
-					delay(cooldown);
-
-					isMoving = false;
-					Serial.println("Hand 1 selected. ");
-				}
-				else
-				{
-					isMoving = false;
-					Serial.println("Hand 1 selected. ");
-				}
-			}
-			break;
-		case 2:
-			if (C9_cilindar == HIGH)
-			{
-				isMoving = false;
-				Serial.println("Hand 1 selected. ");
-			}
-			else
-			{
-				digitalWrite(C8_cilindar, LOW);
-				delay(cooldown);
-
-				digitalWrite(C9_cilindar, HIGH);
-				delay(cooldown);
-
-				if (handSlot[0] == 0)
-				{
-					digitalWrite(C8_cilindar, HIGH);
-					delay(cooldown);
-
-					isMoving = false;
-					Serial.println("Hand 1 selected. ");
-				}
-				else if (handSlot[0] == 1)
-				{
-					digitalWrite(C8_cilindar, LOW);
-					delay(cooldown);
-
-					isMoving = false;
-					Serial.println("Hand 1 selected. ");
-				}
-				else
-				{
-					isMoving = false;
-					Serial.println("Hand 1 selected. ");
-				}
-			}
-			break;
-		default:
-			Serial.println("Incorret option selected. Aborting sequence...");
-			isMoving = false;
-			break;
-		}
 	}
 
-}
-void PawnPickUpNeo() {
-	
-		Serial.print("Initiating vacuum activation. ");
-
-		while (digitalRead(pawnGrabbed_V1) != 1) { // staviti OR ako nije start upaljen
-			digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
-			delay(cooldown);
-			digitalWrite(Vacuum_1, HIGH);
-			delay(cooldown);
-			digitalWrite(C8_cilindar, LOW);
-			delay(cooldown);
-		}
-		
-		digitalWrite(C9_cilindar, HIGH);
-		delay(cooldown);
-		Serial.print("Pawn is picked up. ");
+	digitalWrite(C9_cilindar, HIGH);
+	delay(cooldown);
+	Serial.print("Pawn is picked up. ");
+	isHandFull = true;
 
 }
 void PawnDrop() {
@@ -1465,6 +1348,7 @@ void PawnDrop() {
 	digitalWrite(C8_cilindar, LOW);
 
 	delay(cooldown);
+	isHandFull = false;
 
 }
 byte FindAvailablePawn(byte tableSide) {
@@ -1532,3 +1416,4 @@ byte FindFreeSpot(byte tableSide) {
 	}
 	return pawn;
 }
+
