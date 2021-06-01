@@ -116,73 +116,51 @@ void setup() {
 
 
 	pinMode(CONTROLLINO_IN0, INPUT);                            // IN0   tipka Start
-	Mb.R[0] = CONTROLLINO_IN0;
+	
 	pinMode(CONTROLLINO_IN1, INPUT);                            // IN1   tipka Stop
-	Mb.R[1] = CONTROLLINO_IN1;
+	
 
 	pinMode(CONTROLLINO_A0, INPUT);                             // AI0   senzor C1.0
-	Mb.R[69] = CONTROLLINO_IN1;
+	
 	pinMode(CONTROLLINO_A1, INPUT);                             // AI1   senzor C1.1
-	Mb.R[1] = CONTROLLINO_IN1;
+	
 	pinMode(CONTROLLINO_A2, INPUT);                             // AI2   senzor C2.0
-	Mb.R[2] = CONTROLLINO_IN1;
+	
 	pinMode(CONTROLLINO_A3, INPUT);                             // AI3   senzor C2.1
-	Mb.R[3] = CONTROLLINO_IN1;
+	
 	pinMode(CONTROLLINO_A4, INPUT);                             // AI4   senzor C3.0
-	Mb.R[4] = CONTROLLINO_IN1;
+	
 	pinMode(CONTROLLINO_A5, INPUT);                             // AI5   senzor C3.1
-	Mb.R[5] = CONTROLLINO_IN1;
+	
 	pinMode(CONTROLLINO_A6, INPUT);                             // AI6   senzor C4.0
-	Mb.R[6] = CONTROLLINO_IN1;
+	
 	pinMode(CONTROLLINO_A7, INPUT);                             // AI7   senzor C4.1
-	Mb.R[7] = CONTROLLINO_IN1;
 	pinMode(CONTROLLINO_A8, INPUT);                             // AI8   senzor C5.0
-	Mb.R[8] = CONTROLLINO_IN1;
 	pinMode(CONTROLLINO_A9, INPUT);                             // AI9   senzor C5.1
-	Mb.R[9] = CONTROLLINO_IN1;
 	pinMode(CONTROLLINO_A10, INPUT);                            // AI10  senzor C6.0
-	Mb.R[10] = CONTROLLINO_IN1;
 	pinMode(CONTROLLINO_A11, INPUT);                            // AI11  senzor C6.1
-	Mb.R[11] = CONTROLLINO_IN1;
-
 	pinMode(66, INPUT);                                         // DI0   senzor C7.0, ruka je desno
-	Mb.R[12] = CONTROLLINO_IN1;
 	pinMode(67, INPUT);                                         // DI1   senzor C7.1
-	Mb.R[13] = CONTROLLINO_IN1;
 	pinMode(10, INPUT);                                         // DI2   senzor vakuum 1
-	Mb.R[14] = CONTROLLINO_IN1;
 	pinMode(11, INPUT);                                         // DI3   senzor vakuum 2
-	Mb.R[15] = CONTROLLINO_IN1;
 
 	pinMode(CONTROLLINO_D0, OUTPUT);                            // DO0   vacuum 1 ON (donji)
-	Mb.R[80] = CONTROLLINO_IN0; Mb.C[80] = 0;
 	pinMode(CONTROLLINO_D1, OUTPUT);                            // DO1   vacuum 2 ON (gornji)
-	Mb.R[81] = CONTROLLINO_IN0; Mb.C[81] = 0;
 	pinMode(CONTROLLINO_D5, OUTPUT);                            // DO5   LED Ready
-	Mb.R[85] = CONTROLLINO_IN0; Mb.C[85] = 0;
 	pinMode(CONTROLLINO_D6, OUTPUT);                            // DO6   LED Error
-	Mb.R[86] = CONTROLLINO_IN0; Mb.C[86] = 0;
 	pinMode(CONTROLLINO_D7, OUTPUT);                            // DO7   LED Stop
-	Mb.R[87] = CONTROLLINO_IN0; Mb.C[87] = 0;
+	
 
 	pinMode(CONTROLLINO_R1, OUTPUT);                            // R1    Cilindar 1
-	Mb.R[91] = CONTROLLINO_IN0; Mb.C[91] = 0;
 	pinMode(CONTROLLINO_R2, OUTPUT);                            // R2    Cilindar 2
-	Mb.R[92] = CONTROLLINO_IN0; Mb.C[92] = 0;
 	pinMode(CONTROLLINO_R3, OUTPUT);                            // R3    Cilindar 3
-	Mb.R[93] = CONTROLLINO_IN0; Mb.C[93] = 0;
 	pinMode(CONTROLLINO_R4, OUTPUT);                            // R4    Cilindar 4
-	Mb.R[94] = CONTROLLINO_IN0; Mb.C[94] = 0;
 	pinMode(CONTROLLINO_R5, OUTPUT);                            // R5    Cilindar 5
-	Mb.R[95] = CONTROLLINO_IN0; Mb.C[95] = 0;
 	pinMode(CONTROLLINO_R6, OUTPUT);                            // R6    Aktuator 6
-	Mb.R[96] = CONTROLLINO_IN0; Mb.C[96] = 0;
 	pinMode(CONTROLLINO_R7, OUTPUT);                            // R7    Aktuator 7   (180 degree body rotate)
-	Mb.R[97] = CONTROLLINO_IN0; Mb.C[97] = 0;
 	pinMode(CONTROLLINO_R8, OUTPUT);                            // R8    Aktuator 8   (up-down of body)
-	Mb.R[98] = CONTROLLINO_IN0; Mb.C[98] = 0;
 	pinMode(CONTROLLINO_R9, OUTPUT);                            // R9    Aktuator 9   (180 degree hand rotate)
-	Mb.R[99] = CONTROLLINO_IN0; Mb.C[99] = 0;
+	
 
 	pinMode(interruptStartPin, INPUT);
 	pinMode(interruptStopPin, INPUT);
@@ -383,10 +361,10 @@ void loop() {
 		}
 		if ((Mb.R[9] == 1) || (Mb.R[9] == 2)) {
 			if ((Mb.R[10] >= 1) && (Mb.R[10] <= 9)) {
-
+				//dodati debug komentare što više, 
 				if (Mb.R[9] == 1) {
 
-					if ( (isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == false) ) {
+					if ( (isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == true) ) {
 						RotateLeft();
 						GoTo(1, Mb.R[10]);
 						PawnDrop();
@@ -411,7 +389,7 @@ void loop() {
 					}
 				}
 				else if (Mb.R[9] == 2) {
-					if ((isHandFull == true) && (IsSpotEmpty(2, Mb.R[10]) == false)) {
+					if ((isHandFull == true) && (IsSpotEmpty(2, Mb.R[10]) == true)) {
 						RotateRight();
 						GoTo(2, Mb.R[10]);
 						PawnDrop();
@@ -443,11 +421,48 @@ void loop() {
 		}
 
 		break;
+	case 3:
+		if (Mb.R[21] == 1) {
+			if (Mb.R[20] == 1) {
+				TableGoUp(1);
+				Mb.R[21] = 0;
+			}
+			else if (Mb.R[20] == 2) {
+				TableGoUp(2);
+				Mb.R[21] = 0;
+			}
+			else {
+				if ((debugMessage != "Please select a proper table number. Number received: ") && (Mb.R[20] != 0)) {
+					debugMessage = "Please select a proper table number. Number received: ";
+					Serial.print(debugMessage);
+					Serial.println(Mb.R[20]);
+				}
+			}
+		}
+		if (Mb.R[22] == 1) {
+			if (Mb.R[20] == 1) {
+				TableGoDown(1);
+				Mb.R[22] = 0;
+			}
+			else if (Mb.R[20] == 2) {
+				TableGoDown(2);
+				Mb.R[22] = 0;
+			}
+			else {
+				if ((debugMessage != "Please select a proper table number. Number received: ") && (Mb.R[20] != 0)) {
+					debugMessage = "Please select a proper table number. Number received: ";
+					Serial.print(debugMessage);
+					Serial.println(Mb.R[20]);
+				}
+			}
+		}
+		break;
 	case 4:
+		
 		break;
 	default:
 		if (debugMessage != "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
-			debugMessage = "Please select a valid option [1-Auto mode, 2-Jog mode].";
+			debugMessage = "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].";
 			Serial.println(debugMessage);
 		}
 		break;
@@ -995,7 +1010,7 @@ bool IsSpotEmpty(byte tableSide, byte pawnPosition) {
 		}
 	}
 	else if (tableSide == 2) {
-		if (tableLeft[pawnPosition] == 1) {
+		if (tableRight[pawnPosition] == 1) {
 			return false;
 		}
 		else {
