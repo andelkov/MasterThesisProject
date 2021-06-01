@@ -18,7 +18,7 @@ int cooldown = 1000;                // Time between movement/valve activations i
 int counter = 0;
 char selectMode;
 
-unsigned long longValue = 111111111;
+unsigned long longValue = 111111111; // za izbrisati
 unsigned long message;
 
 uint32_t loWord, hiWord;
@@ -214,6 +214,9 @@ void loop() {
 
 	Mb.Run();
 	//možda else if bolje umjesto switch??
+	if (isHandFull == true) {
+		Mb.R[3] = 2;
+	}
 	switch (Mb.R[3]) {
 	case 1:
 		if (debugMessage != "Auto-mode selected.") {
@@ -382,6 +385,7 @@ void loop() {
 			if ((Mb.R[10] >= 1) && (Mb.R[10] <= 9)) {
 
 				if (Mb.R[9] == 1) {
+
 					if ( (isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == false) ) {
 						RotateLeft();
 						GoTo(1, Mb.R[10]);
