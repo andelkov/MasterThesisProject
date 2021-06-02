@@ -192,7 +192,7 @@ void loop() {
 	}
 
 	Mb.Run();
-	//možda else if bolje umjesto switch?? Nah..
+	
 	if (isHandFull == true) {
 		Mb.R[3] = 2;
 	}
@@ -423,7 +423,136 @@ void loop() {
 
 		break;
 	case 3:
-		// "repeat while " dodati ako je u zraku pijun. obvezno staviti Mb.Run()
+		do {
+			Mb.Run();
+			Mb.R[3] = 3;
+			//go up
+			if (Mb.R[21] == 1) {
+				if (Mb.R[20] == 1) {
+					if ((digitalRead(C1_uvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
+						TableGoCenterY(1);
+					}
+					else {
+						TableGoUp(1);
+					}
+
+					Mb.R[21] = 0;
+				}
+				else if (Mb.R[20] == 2) {
+					if ((digitalRead(C3_uvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
+						TableGoCenterY(2);
+					}
+					else {
+						TableGoUp(2);
+					}
+
+					Mb.R[21] = 0;
+				}
+				else {
+					if ((debugMessage != "Please select a proper table number. Number received: ") && (Mb.R[20] != 0)) {
+						debugMessage = "Please select a proper table number. Number received: ";
+						Serial.print(debugMessage);
+						Serial.println(Mb.R[20]);
+					}
+				}
+			}
+			//go down
+			if (Mb.R[22] == 1) {
+				if (Mb.R[20] == 1) {
+					if ((digitalRead(C1_izvucen) == 1) && (digitalRead(C2_izvucen) == 1)) {
+						TableGoCenterY(1);
+					}
+					else {
+						TableGoDown(1);
+					}
+					Mb.R[22] = 0;
+				}
+				else if (Mb.R[20] == 2) {
+					if ((digitalRead(C3_izvucen) == 1) && (digitalRead(C4_izvucen) == 1)) {
+						TableGoCenterY(2);
+					}
+					else {
+						TableGoDown(2);
+					}
+
+					Mb.R[22] = 0;
+				}
+				else {
+					if ((debugMessage != "Please select a proper table number. Number received: ") && (Mb.R[20] != 0)) {
+						debugMessage = "Please select a proper table number. Number received: ";
+						Serial.print(debugMessage);
+						Serial.println(Mb.R[20]);
+						flashError();
+					}
+				}
+			}
+			//go left
+			if (Mb.R[23] == 1) {
+				if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_izvucen) == 1)) {
+					TableGoCenterX();
+				}
+				else {
+					TableGoLeft();
+				}
+				Mb.R[23] = 0;
+			}
+			//go right
+			if (Mb.R[24] == 1) {
+				if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+					TableGoCenterX();
+				}
+				else {
+					TableGoRight();
+				}
+				Mb.R[24] = 0;
+			}
+			//rotate left or right
+			if ((Mb.R[25] == 1) || (Mb.R[25] == 2)) {
+
+				if (Mb.R[25] == 1) {
+					RotateLeft();
+					Mb.R[20] = 1;
+				}
+				else if (Mb.R[25] == 2) {
+					RotateRight();
+					Mb.R[20] = 2;
+				}
+
+				Mb.R[25] = 0;
+			}
+			// pick up the pawn
+			if (Mb.R[26] == 1) {
+
+				if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == false) {
+					PawnPickUpNeo();
+
+					Serial.print("--> Picked pawn from position: ");
+					Serial.println(currentPawnPosition());
+				}
+				else {
+					Serial.println("--> There is no pawn under the hand to pick up. ");
+					flashError();
+				}
+
+				Mb.R[26] = 0;
+			}
+			// drop the pawn
+			if (Mb.R[27] == 1) {
+				if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == true) {
+					PawnDrop();
+
+					Serial.print("--> Picked pawn from position: ");
+					Serial.println(currentPawnPosition());
+				}
+				else {
+					Serial.println("--> There is a pawn under the hand. Can't drop the pawn in this position. ");
+					flashError();
+				}
+
+				Mb.R[27] = 0;
+			}
+		} while (isHandFull == true); /// možda još ubaciti uvjet da Mb.R[0] == 1
+
 		if (modeMessage != "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].") {
 			modeMessage = "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].";
 			Serial.println(modeMessage);
@@ -434,131 +563,6 @@ void loop() {
 			else if (digitalRead(handIsRight) == 1) {
 				Mb.R[20] = 2;
 			}
-		}
-		//go up
-		if (Mb.R[21] == 1) {
-			if (Mb.R[20] == 1) {
-				if ((digitalRead(C1_uvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
-					TableGoCenterY(1);
-				}
-				else {
-					TableGoUp(1);
-				}
-
-				Mb.R[21] = 0;
-			}
-			else if (Mb.R[20] == 2) {
-				if ((digitalRead(C3_uvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
-					TableGoCenterY(2);
-				}
-				else {
-					TableGoUp(2);
-				}
-
-				Mb.R[21] = 0;
-			}
-			else {
-				if ((debugMessage != "Please select a proper table number. Number received: ") && (Mb.R[20] != 0)) {
-					debugMessage = "Please select a proper table number. Number received: ";
-					Serial.print(debugMessage);
-					Serial.println(Mb.R[20]);
-				}
-			}
-		}
-		//go down
-		if (Mb.R[22] == 1) {
-			if (Mb.R[20] == 1) {
-				if ((digitalRead(C1_izvucen) == 1) && (digitalRead(C2_izvucen) == 1)) {
-					TableGoCenterY(1);
-				}
-				else {
-					TableGoDown(1);
-				}
-				Mb.R[22] = 0;
-			}
-			else if (Mb.R[20] == 2) {
-				if ((digitalRead(C3_izvucen) == 1) && (digitalRead(C4_izvucen) == 1)) {
-					TableGoCenterY(2);
-				}
-				else {
-					TableGoDown(2);
-				}
-
-				Mb.R[22] = 0;
-			}
-			else {
-				if ((debugMessage != "Please select a proper table number. Number received: ") && (Mb.R[20] != 0)) {
-					debugMessage = "Please select a proper table number. Number received: ";
-					Serial.print(debugMessage);
-					Serial.println(Mb.R[20]);
-					flashError();
-				}
-			}
-		}
-		//go left
-		if (Mb.R[23] == 1) {
-			if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_izvucen) == 1)) {
-				TableGoCenterX();
-			}
-			else {
-				TableGoLeft();
-			}
-			Mb.R[23] = 0;
-		}
-		//go right
-		if (Mb.R[24] == 1) {
-			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
-				TableGoCenterX();
-			}
-			else {
-				TableGoRight();
-			}
-			Mb.R[24] = 0;
-		}
-		//rotate left or right
-		if ((Mb.R[25] == 1) || (Mb.R[25] == 2)) {
-
-			if (Mb.R[25] == 1) {
-				RotateLeft();
-				Mb.R[20] = 1;
-			}
-			else if (Mb.R[25] == 2) {
-				RotateRight();
-				Mb.R[20] = 2;
-			}
-
-			Mb.R[25] = 0;
-		}
-		// pick up the pawn
-		if (Mb.R[26] == 1) {
-
-			if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == false) {
-				PawnPickUpNeo();
-
-				Serial.print("--> Picked pawn from position: ");
-				Serial.println(currentPawnPosition());
-			}
-			else {
-				Serial.println("--> There is no pawn under the hand to pick up. ");
-				flashError();
-			}
-
-			Mb.R[26] = 0;
-		}
-		// drop the pawn
-		if (Mb.R[27] == 1) {
-			if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == true) {
-				PawnDrop();
-
-				Serial.print("--> Picked pawn from position: ");
-				Serial.println(currentPawnPosition());
-			}
-			else {
-				Serial.println("--> There is a pawn under the hand. Can't drop the pawn in this position. ");
-				flashError();
-			}
-
-			Mb.R[27] = 0;
 		}
 		break;
 	case 4:
