@@ -432,28 +432,28 @@ void loop() {
 			}
 			else if (digitalRead(handIsRight) == 1) {
 				Mb.R[20] = 2;
-			} 
+			}
 		}
 		//go up
 		if (Mb.R[21] == 1) {
 			if (Mb.R[20] == 1) {
 				if ((digitalRead(C1_uvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
-					TableGoCenter(1);
+					TableGoCenterY(1);
 				}
 				else {
 					TableGoUp(1);
 				}
-				
+
 				Mb.R[21] = 0;
 			}
 			else if (Mb.R[20] == 2) {
 				if ((digitalRead(C3_uvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
-					TableGoCenter(2);
+					TableGoCenterY(2);
 				}
 				else {
 					TableGoUp(2);
 				}
-				
+
 				Mb.R[21] = 0;
 			}
 			else {
@@ -468,7 +468,7 @@ void loop() {
 		if (Mb.R[22] == 1) {
 			if (Mb.R[20] == 1) {
 				if ((digitalRead(C1_izvucen) == 1) && (digitalRead(C2_izvucen) == 1)) {
-					TableGoCenter(1);
+					TableGoCenterY(1);
 				}
 				else {
 					TableGoDown(1);
@@ -477,12 +477,12 @@ void loop() {
 			}
 			else if (Mb.R[20] == 2) {
 				if ((digitalRead(C3_izvucen) == 1) && (digitalRead(C4_izvucen) == 1)) {
-					TableGoCenter(2);
+					TableGoCenterY(2);
 				}
 				else {
 					TableGoDown(2);
 				}
-				
+
 				Mb.R[22] = 0;
 			}
 			else {
@@ -496,7 +496,7 @@ void loop() {
 		//go left
 		if (Mb.R[23] == 1) {
 			if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_izvucen) == 1)) {
-				TableGoCenterNeo();
+				TableGoCenterX();
 			}
 			else {
 				TableGoLeft();
@@ -505,17 +505,16 @@ void loop() {
 		}
 		//go right
 		if (Mb.R[24] == 1) {
-			if ( (digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1) ) {
-				TableGoCenterNeo();
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+				TableGoCenterX();
 			}
 			else {
 				TableGoRight();
-				Mb.R[24] = 0;
 			}
 			Mb.R[24] = 0;
 		}
 		//rotate left or right
-		if ( (Mb.R[25] == 1) || (Mb.R[25] == 2) ) {
+		if ((Mb.R[25] == 1) || (Mb.R[25] == 2)) {
 
 			if (Mb.R[25] == 1) {
 				RotateLeft();
@@ -557,23 +556,18 @@ void loop() {
 
 
 //////////////////////////////// FUNCTIONS //////////////////////////////////////////////
-
-//////////////////////////////// FOR JOG MODE
 void TableGoRight() {
 
-
 	isMoving = true;
-	Serial.print("Going right. ");
+	Serial.print("--> Going right. ");
 
 	digitalWrite(CONTROLLINO_R6, HIGH);
 	digitalWrite(CONTROLLINO_R5, HIGH);
 	delay(cooldown);
 
-	//Serial.print("Move status: %b, isM ");
-
 	while (isMoving == true) {
 		Serial.print("Waiting for input from sensors C5 and C6... ");
-		if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_izvucen) == 1) {
+		if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_izvucen) == 1)) {
 			isMoving = false;
 			Serial.println("Move completed.");
 		}
@@ -586,7 +580,7 @@ void TableGoLeft() {
 	if (isMoving == false) {
 
 		isMoving = true;
-		Serial.print("Going left. ");
+		Serial.print("--> Going left. ");
 
 		digitalWrite(CONTROLLINO_R6, LOW);
 		digitalWrite(CONTROLLINO_R5, LOW);
@@ -595,7 +589,7 @@ void TableGoLeft() {
 		Serial.print("Waiting for input from sensors C5 and C6. ");
 		while (isMoving == true) {
 
-			if (digitalRead(C5_uvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
 				isMoving = false;
 				Serial.println("Move completed.");
 			}
@@ -604,8 +598,10 @@ void TableGoLeft() {
 	}
 
 }
-void TableGoCenterNeo() {
-	Serial.print("---> Going to the center. ");
+
+void TableGoCenterX() {
+
+	Serial.print("---> Going to the center in the X direction. ");
 	isMoving == true;
 	digitalWrite(CONTROLLINO_R6, LOW);
 	digitalWrite(CONTROLLINO_R5, HIGH);
@@ -613,12 +609,59 @@ void TableGoCenterNeo() {
 
 	while (isMoving == true) {
 		Serial.print("Waiting for input from sensors C5 and C6. ");
-		if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+		if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
 			isMoving = false;
-			Serial.println("Move completed. ");
+			Serial.println("Move completed. Table in X centre. ");
 		}
+		
 	}
 }
+
+void TableGoCenterY(char tableSide) {
+
+	if (tableSide == 1) {
+
+		isMoving = true;
+		Serial.print("---> Moving left table to the Y centre. ");
+
+		digitalWrite(C1_cilindar, HIGH);
+		digitalWrite(C2_cilindar, LOW);
+		delay(cooldown);
+
+		Serial.print("Waiting for input from sensors on C1 and C2. ");
+		while (isMoving == true) {
+
+			if ((digitalRead(C1_izvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
+				isMoving = false;
+				Serial.println("Move completed. ");
+			}
+		}
+
+	}
+	else if (tableSide == 2) {
+
+		isMoving = true;
+		Serial.print("---> Moving right table to the Y centre. ");
+
+		digitalWrite(C3_cilindar, HIGH);
+		digitalWrite(C4_cilindar, LOW);
+		delay(cooldown);
+
+		Serial.print("Waiting for input from sensors on C3 and C4. ");
+		while (isMoving == true) {
+			if ((digitalRead(C3_izvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
+				isMoving = false;
+				Serial.println("Move completed. ");
+			}
+		}
+
+	}
+	else {
+		Serial.println("--> Check input number for table positon.");
+	}
+
+}
+
 void TableGoCenter(char tableSide) {
 	// R/r/1 - left table
 	// L/l/2 - right table
@@ -626,13 +669,11 @@ void TableGoCenter(char tableSide) {
 		if (isMoving == false) {
 
 			isMoving = true;
-			Serial.print("Going right. ");
+			Serial.print("---> Going right. ");
 
 			digitalWrite(CONTROLLINO_R6, LOW);
 			digitalWrite(CONTROLLINO_R5, HIGH);
 			delay(cooldown);
-
-			//Serial.print("Move status: %b, isM ");
 
 			while (isMoving == true) {
 				Serial.print("Waiting for input from sensors C5 and C6... ");
@@ -713,7 +754,7 @@ void TableGoUp(char tableSide) {
 	if (tableSide == 2) {
 		if (isMoving == false) {
 			isMoving = true;
-			Serial.print("Moving right table up. ");
+			Serial.print("---> Moving right table up. ");
 
 			digitalWrite(C3_cilindar, HIGH);
 			digitalWrite(C4_cilindar, HIGH);
@@ -722,7 +763,7 @@ void TableGoUp(char tableSide) {
 			Serial.print("Waiting for input from sensors on C3 and C4. ");
 			while (isMoving == true) {
 
-				if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_izvucen) == 1) {
+				if ((digitalRead(C3_izvucen) == 1) && (digitalRead(C4_izvucen) == 1)) {
 					isMoving = false;
 					Serial.println("Move completed.");
 				}
@@ -733,7 +774,7 @@ void TableGoUp(char tableSide) {
 
 		if (isMoving == false) {
 			isMoving = true;
-			Serial.print("Moving left table up. ");
+			Serial.print("---> Moving left table up. ");
 
 			digitalWrite(C1_cilindar, HIGH);
 			digitalWrite(C2_cilindar, HIGH);
@@ -742,7 +783,7 @@ void TableGoUp(char tableSide) {
 			Serial.print("Waiting for input from sensors on C1 and C2. ");
 			while (isMoving == true) {
 
-				if (digitalRead(C1_izvucen) == 1 && digitalRead(C2_izvucen) == 1) {
+				if ((digitalRead(C1_izvucen) == 1) && (digitalRead(C2_izvucen) == 1)) {
 					isMoving = false;
 					Serial.println("Move completed.");
 				}
@@ -753,7 +794,7 @@ void TableGoUp(char tableSide) {
 	}
 	else
 	{
-		Serial.println("Incorrect input. Aborting sequence...");
+		Serial.println("--> Incorrect input. Aborting sequence...");
 	}
 
 }
@@ -764,7 +805,7 @@ void TableGoDown(char tableSide) {
 	if (tableSide == 2) {
 		if (isMoving == false) {
 			isMoving = true;
-			Serial.print("Moving right table down. ");
+			Serial.print("---> Moving right table down. ");
 
 			digitalWrite(C3_cilindar, LOW);
 			digitalWrite(C4_cilindar, LOW);
@@ -773,7 +814,7 @@ void TableGoDown(char tableSide) {
 			Serial.print("Waiting for input from sensors on C3 and C4. ");
 			while (isMoving == true) {
 
-				if (digitalRead(C3_uvucen) == 1 && digitalRead(C4_uvucen) == 1) {
+				if ((digitalRead(C3_uvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
 					isMoving = false;
 					Serial.println("Move completed.");
 				}
@@ -784,7 +825,7 @@ void TableGoDown(char tableSide) {
 
 		if (isMoving == false) {
 			isMoving = true;
-			Serial.print("Moving left table down. ");
+			Serial.print("---> Moving left table down. ");
 
 			digitalWrite(C1_cilindar, LOW);
 			digitalWrite(C2_cilindar, LOW);
@@ -793,7 +834,7 @@ void TableGoDown(char tableSide) {
 			Serial.print("Waiting for input from sensors on C1 and C2. ");
 			while (isMoving == true) {
 
-				if (digitalRead(C1_uvucen) == 1 && digitalRead(C2_uvucen) == 1) {
+				if ((digitalRead(C1_uvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
 					isMoving = false;
 					Serial.println("Move completed.");
 				}
@@ -803,7 +844,7 @@ void TableGoDown(char tableSide) {
 	}
 	else
 	{
-		Serial.println("Incorrect input. Aborting sequence...");
+		Serial.println("---> Incorrect input. Aborting sequence...");
 	}
 
 }
@@ -813,7 +854,7 @@ void RotateRight() {
 	if (isMoving == false && (isUp == true))  //maybe add "|| handSlot[0] == 0"
 	{
 		isMoving = true;
-		Serial.print("Rotating to the right.");
+		Serial.print("---> Rotating to the right.");
 		digitalWrite(C7_cilindar, HIGH);
 		delay(cooldown);
 
@@ -825,10 +866,10 @@ void RotateRight() {
 			}
 		}
 	}
-	else if (isMoving == false && (isUp == false)) //maybe add "|| handSlot[0] == 0"
+	else if ((isMoving == false) && (isUp == false)) //maybe add "|| handSlot[0] == 0"
 	{
 		isMoving = true;
-		Serial.print("Rotating to the right.");
+		Serial.print("---> Rotating to the right.");
 		digitalWrite(C8_cilindar, LOW);
 		delay(cooldown);
 
@@ -847,7 +888,7 @@ void RotateRight() {
 	}
 	else
 	{
-		Serial.println("Rotation to the right can't be perfomed. ");
+		Serial.println("---> Rotation to the right can't be perfomed. ");
 	}
 
 }
@@ -857,7 +898,7 @@ void RotateLeft() {
 	if (isMoving == false && (isUp == true)) //maybe add "|| handSlot[0] == 0"
 	{
 		isMoving = true;
-		Serial.print("The hand is up. Rotating to the left.");
+		Serial.print("---> The hand is up. Rotating to the left.");
 
 		digitalWrite(C7_cilindar, LOW);
 		delay(cooldown);
@@ -870,10 +911,10 @@ void RotateLeft() {
 			}
 		}
 	}
-	else if (isMoving == false && (isUp == false)) //maybe add "|| handSlot[0] == 0"
+	else if ((isMoving == false) && (isUp == false)) //maybe add "|| handSlot[0] == 0"
 	{
 		isMoving = true;
-		Serial.print("The hand is down. Rotating to the left.");
+		Serial.print("---> The hand is down. Rotating to the left.");
 
 		digitalWrite(C8_cilindar, LOW);
 		delay(cooldown);
@@ -893,7 +934,7 @@ void RotateLeft() {
 	}
 	else
 	{
-		Serial.println("Rotation to the left can't be perfomed. ");
+		Serial.println("---> Rotation to the left can't be perfomed. ");
 	}
 
 
@@ -1020,12 +1061,12 @@ void GrabPawn() {
 	if (isMoving == false) {
 
 		isMoving = true;
-		Serial.print("Grabbing the pawn with vacuum.. ");
+		Serial.print("---> Grabbing the pawn with vacuum.. ");
 
 		digitalWrite(Vacuum_1, HIGH);
 		delay(cooldown);
 
-		Serial.print("Waiting for input from vacuum sensor 1.. ");
+		Serial.print("Waiting for input from vacuum sensor 1. ");
 		while (isMoving == true) {
 
 			if (digitalRead(pawnGrabbed_V1) == 1) {
@@ -1038,7 +1079,7 @@ void GrabPawn() {
 }
 
 void StartPressed() {
-	Serial.println("Start pressed.");
+	Serial.println("--> Start pressed.");
 	startPressed = HIGH;
 
 	digitalWrite(LED_Start, LOW);
@@ -1050,7 +1091,7 @@ void StartPressed() {
 }
 
 void StopPressed() {
-	Serial.println("Stop pressed.");
+	Serial.println("--> Stop pressed.");
 	Mb.R[1] = 1;
 	Mb.R[0] = 0;
 	digitalWrite(LED_Stop, HIGH);
@@ -1094,7 +1135,7 @@ bool isTableEmpty(byte tableSide) {
 
 
 }
-//////////////////////////////// FOR AUTO MODE
+
 bool IsSpotEmpty(byte tableSide, byte pawnPosition) {
 	//treba testirat ovo
 	if (tableSide == 1) {
@@ -1117,6 +1158,7 @@ bool IsSpotEmpty(byte tableSide, byte pawnPosition) {
 		Serial.println("Wrong table side choosen for checking if spot is empty.");
 	}
 }
+
 void GoTo(byte tableSide, byte pawnPosition) {
 
 	if (tableSide == 1) {
@@ -1429,9 +1471,10 @@ void GoTo(byte tableSide, byte pawnPosition) {
 
 
 }
+
 void PawnPickUpNeo() {
 
-	Serial.print("Initiating vacuum activation. ");
+	Serial.print("--> Initiating vacuum activation. ");
 
 	while (digitalRead(pawnGrabbed_V1) != 1) { // staviti OR ako nije start upaljen
 		digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li tu ide LOW!!!
@@ -1448,6 +1491,7 @@ void PawnPickUpNeo() {
 	isHandFull = true;
 
 }
+
 void PawnDrop() {
 
 	digitalWrite(C9_cilindar, LOW);
@@ -1456,7 +1500,7 @@ void PawnDrop() {
 	digitalWrite(C8_cilindar, HIGH); // !!! testirati u real life da li ce se spustiti dolje!!!
 	delay(cooldown);
 
-	Serial.print("Initiating vacuum de-activation. ");
+	Serial.print("--> Initiating vacuum de-activation. ");
 	digitalWrite(Vacuum_1, LOW); //vacuum isključiti ovdje  // !!! testirati koji suction je pod brojem 1 u real life !!!
 
 
@@ -1464,8 +1508,10 @@ void PawnDrop() {
 
 	delay(cooldown);
 	isHandFull = false;
+	Serial.println("Pawn dropped. ");
 
 }
+
 byte FindAvailablePawn(byte tableSide) {
 	byte pawn = 0;
 	byte n = 1;
@@ -1494,6 +1540,7 @@ byte FindAvailablePawn(byte tableSide) {
 	}
 	return pawn;
 }
+
 byte FindFreeSpot(byte tableSide) {
 	byte pawn;
 	byte n = 0;
