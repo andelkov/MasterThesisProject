@@ -192,7 +192,7 @@ void loop() {
 	}
 
 	Mb.Run();
-	//možda else if bolje umjesto switch??
+	//možda else if bolje umjesto switch?? Nah..
 	if (isHandFull == true) {
 		Mb.R[3] = 2;
 	}
@@ -423,6 +423,7 @@ void loop() {
 
 		break;
 	case 3:
+		// "repeat while " dodati ako je u zraku pijun. obvezno staviti Mb.Run()
 		if (modeMessage != "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].") {
 			modeMessage = "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].";
 			Serial.println(modeMessage);
@@ -490,6 +491,7 @@ void loop() {
 					debugMessage = "Please select a proper table number. Number received: ";
 					Serial.print(debugMessage);
 					Serial.println(Mb.R[20]);
+					flashError();
 				}
 			}
 		}
@@ -529,12 +531,33 @@ void loop() {
 		}
 		// pick up the pawn
 		if (Mb.R[26] == 1) {
-			PawnPickUpNeo();
+
+			if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == false) {
+				PawnPickUpNeo();
+
+				Serial.print("--> Picked pawn from position: ");
+				Serial.println(currentPawnPosition());
+			}
+			else {
+				Serial.println("--> There is no pawn under the hand to pick up. ");
+				flashError();
+			}
+
 			Mb.R[26] = 0;
 		}
 		// drop the pawn
 		if (Mb.R[27] == 1) {
-			PawnDrop();
+			if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == true) {
+				PawnDrop();
+
+				Serial.print("--> Picked pawn from position: ");
+				Serial.println(currentPawnPosition());
+			}
+			else {
+				Serial.println("--> There is a pawn under the hand. Can't drop the pawn in this position. ");
+				flashError();
+			}
+
 			Mb.R[27] = 0;
 		}
 		break;
@@ -549,11 +572,7 @@ void loop() {
 		break;
 	}
 
-
-
 }
-
-
 
 //////////////////////////////// FUNCTIONS //////////////////////////////////////////////
 void TableGoRight() {
@@ -613,7 +632,7 @@ void TableGoCenterX() {
 			isMoving = false;
 			Serial.println("Move completed. Table in X centre. ");
 		}
-		
+
 	}
 }
 
@@ -1577,5 +1596,111 @@ byte FindFreeSpot(byte tableSide) {
 		pawn = 0;
 	}
 	return pawn;
+}
+
+byte currentPawnPosition() {
+	// function for finding the position under the hand
+	if (digitalRead(handIsLeft) == 1) {
+
+		if ((digitalRead(C1_uvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
+
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+				return 7;
+			}
+			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
+				return 8;
+			}
+			else {
+				return 9;
+			}
+
+		}
+		else if (((digitalRead(C1_izvucen) == 1) && (digitalRead(C2_uvucen) == 1)) || ((digitalRead(C2_izvucen) == 1) && (digitalRead(C1_uvucen) == 1))) {
+
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+				return 4;
+			}
+			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
+				return 5;
+			}
+			else {
+				return 6;
+			}
+
+		}
+		else {
+
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+				return 1;
+			}
+			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
+				return 2;
+			}
+			else {
+				return 3;
+			}
+
+		}
+	}
+	else if (digitalRead(handIsRight) == 1) {
+
+		if ((digitalRead(C3_uvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
+
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+				return 7;
+			}
+			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
+				return 8;
+			}
+			else {
+				return 9;
+			}
+
+		}
+		else if (((digitalRead(C3_izvucen) == 1) && (digitalRead(C4_uvucen) == 1)) || ((digitalRead(C4_izvucen) == 1) && (digitalRead(C3_uvucen) == 1))) {
+
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+				return 4;
+			}
+			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
+				return 5;
+			}
+			else {
+				return 6;
+			}
+
+		}
+		else {
+
+			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
+				return 1;
+			}
+			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
+				return 2;
+			}
+			else {
+				return 3;
+			}
+
+		}
+
+	}
+
+}
+
+byte currentTableSide() {
+
+	if (digitalRead(handIsLeft) == 1) {
+		return 1;
+	}
+	else if (digitalRead(handIsRight) == 1) {
+		return 2;
+	}
+}
+
+void flashError() {
+	digitalWrite(LED_Error, 1);
+	delay(500);
+	digitalWrite(LED_Error, 0);
 }
 
