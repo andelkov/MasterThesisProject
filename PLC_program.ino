@@ -35,6 +35,7 @@ byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
 String arrayPart;
 String debugMessage = " ";
+String modeMessage = "";
 String messageString;
 byte selectHand = 1;
 byte handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
@@ -116,24 +117,24 @@ void setup() {
 
 
 	pinMode(CONTROLLINO_IN0, INPUT);                            // IN0   tipka Start
-	
+
 	pinMode(CONTROLLINO_IN1, INPUT);                            // IN1   tipka Stop
-	
+
 
 	pinMode(CONTROLLINO_A0, INPUT);                             // AI0   senzor C1.0
-	
+
 	pinMode(CONTROLLINO_A1, INPUT);                             // AI1   senzor C1.1
-	
+
 	pinMode(CONTROLLINO_A2, INPUT);                             // AI2   senzor C2.0
-	
+
 	pinMode(CONTROLLINO_A3, INPUT);                             // AI3   senzor C2.1
-	
+
 	pinMode(CONTROLLINO_A4, INPUT);                             // AI4   senzor C3.0
-	
+
 	pinMode(CONTROLLINO_A5, INPUT);                             // AI5   senzor C3.1
-	
+
 	pinMode(CONTROLLINO_A6, INPUT);                             // AI6   senzor C4.0
-	
+
 	pinMode(CONTROLLINO_A7, INPUT);                             // AI7   senzor C4.1
 	pinMode(CONTROLLINO_A8, INPUT);                             // AI8   senzor C5.0
 	pinMode(CONTROLLINO_A9, INPUT);                             // AI9   senzor C5.1
@@ -149,7 +150,7 @@ void setup() {
 	pinMode(CONTROLLINO_D5, OUTPUT);                            // DO5   LED Ready
 	pinMode(CONTROLLINO_D6, OUTPUT);                            // DO6   LED Error
 	pinMode(CONTROLLINO_D7, OUTPUT);                            // DO7   LED Stop
-	
+
 
 	pinMode(CONTROLLINO_R1, OUTPUT);                            // R1    Cilindar 1
 	pinMode(CONTROLLINO_R2, OUTPUT);                            // R2    Cilindar 2
@@ -160,7 +161,7 @@ void setup() {
 	pinMode(CONTROLLINO_R7, OUTPUT);                            // R7    Aktuator 7   (180 degree body rotate)
 	pinMode(CONTROLLINO_R8, OUTPUT);                            // R8    Aktuator 8   (up-down of body)
 	pinMode(CONTROLLINO_R9, OUTPUT);                            // R9    Aktuator 9   (180 degree hand rotate)
-	
+
 
 	pinMode(interruptStartPin, INPUT);
 	pinMode(interruptStopPin, INPUT);
@@ -197,8 +198,8 @@ void loop() {
 	}
 	switch (Mb.R[3]) {
 	case 1:
-		if (debugMessage != "Auto-mode selected.") {
-			debugMessage = "Auto-mode selected. ";
+		if (modeMessage != "Auto-mode selected.") {
+			modeMessage = "Auto-mode selected. ";
 			Serial.println(debugMessage);
 		}
 
@@ -355,16 +356,16 @@ void loop() {
 
 		break;
 	case 2:
-		if (debugMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
-			debugMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
-			Serial.println(debugMessage);
+		if (modeMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
+			modeMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
+			Serial.println(modeMessage);
 		}
 		if ((Mb.R[9] == 1) || (Mb.R[9] == 2)) {
 			if ((Mb.R[10] >= 1) && (Mb.R[10] <= 9)) {
 				//dodati debug komentare što više, 
 				if (Mb.R[9] == 1) {
 
-					if ( (isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == true) ) {
+					if ((isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == true)) {
 						RotateLeft();
 						GoTo(1, Mb.R[10]);
 						PawnDrop();
@@ -422,13 +423,37 @@ void loop() {
 
 		break;
 	case 3:
+		if (modeMessage != "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].") {
+			modeMessage = "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].";
+			Serial.println(modeMessage);
+
+			if (digitalRead(handIsLeft) == 1) {
+				Mb.R[20] = 1;
+			}
+			else if (digitalRead(handIsRight) == 1) {
+				Mb.R[20] = 2;
+			} 
+		}
+		//go up
 		if (Mb.R[21] == 1) {
 			if (Mb.R[20] == 1) {
-				TableGoUp(1);
+				if ((digitalRead(C1_uvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
+					TableGoCenter(1);
+				}
+				else {
+					TableGoUp(1);
+				}
+				
 				Mb.R[21] = 0;
 			}
 			else if (Mb.R[20] == 2) {
-				TableGoUp(2);
+				if ((digitalRead(C3_uvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
+					TableGoCenter(2);
+				}
+				else {
+					TableGoUp(2);
+				}
+				
 				Mb.R[21] = 0;
 			}
 			else {
@@ -439,13 +464,25 @@ void loop() {
 				}
 			}
 		}
+		//go down
 		if (Mb.R[22] == 1) {
 			if (Mb.R[20] == 1) {
-				TableGoDown(1);
+				if ((digitalRead(C1_izvucen) == 1) && (digitalRead(C2_izvucen) == 1)) {
+					TableGoCenter(1);
+				}
+				else {
+					TableGoDown(1);
+				}
 				Mb.R[22] = 0;
 			}
 			else if (Mb.R[20] == 2) {
-				TableGoDown(2);
+				if ((digitalRead(C3_izvucen) == 1) && (digitalRead(C4_izvucen) == 1)) {
+					TableGoCenter(2);
+				}
+				else {
+					TableGoDown(2);
+				}
+				
 				Mb.R[22] = 0;
 			}
 			else {
@@ -455,15 +492,60 @@ void loop() {
 					Serial.println(Mb.R[20]);
 				}
 			}
+		}
+		//go left
+		if (Mb.R[23] == 1) {
+			if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_izvucen) == 1)) {
+				TableGoCenterNeo();
+			}
+			else {
+				TableGoLeft();
+			}
+			Mb.R[23] = 0;
+		}
+		//go right
+		if (Mb.R[24] == 1) {
+			if ( (digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1) ) {
+				TableGoCenterNeo();
+			}
+			else {
+				TableGoRight();
+				Mb.R[24] = 0;
+			}
+			Mb.R[24] = 0;
+		}
+		//rotate left or right
+		if ( (Mb.R[25] == 1) || (Mb.R[25] == 2) ) {
+
+			if (Mb.R[25] == 1) {
+				RotateLeft();
+				Mb.R[20] = 1;
+			}
+			else if (Mb.R[25] == 2) {
+				RotateRight();
+				Mb.R[20] = 2;
+			}
+
+			Mb.R[25] = 0;
+		}
+		// pick up the pawn
+		if (Mb.R[26] == 1) {
+			PawnPickUpNeo();
+			Mb.R[26] = 0;
+		}
+		// drop the pawn
+		if (Mb.R[27] == 1) {
+			PawnDrop();
+			Mb.R[27] = 0;
 		}
 		break;
 	case 4:
-		
+
 		break;
 	default:
-		if (debugMessage != "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
-			debugMessage = "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].";
-			Serial.println(debugMessage);
+		if (modeMessage != "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
+			modeMessage = "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].";
+			Serial.println(modeMessage);
 		}
 		break;
 	}
@@ -522,7 +604,21 @@ void TableGoLeft() {
 	}
 
 }
+void TableGoCenterNeo() {
+	Serial.print("---> Going to the center. ");
+	isMoving == true;
+	digitalWrite(CONTROLLINO_R6, LOW);
+	digitalWrite(CONTROLLINO_R5, HIGH);
+	delay(cooldown);
 
+	while (isMoving == true) {
+		Serial.print("Waiting for input from sensors C5 and C6. ");
+		if (digitalRead(C5_izvucen) == 1 && digitalRead(C6_uvucen) == 1) {
+			isMoving = false;
+			Serial.println("Move completed. ");
+		}
+	}
+}
 void TableGoCenter(char tableSide) {
 	// R/r/1 - left table
 	// L/l/2 - right table
