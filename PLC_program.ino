@@ -193,7 +193,6 @@ void loop() {
 
 	Mb.Run();
 	
-
 	switch (Mb.R[3]) {
 	case 1:
 		if (modeMessage != "Auto-mode selected.") {
@@ -512,13 +511,26 @@ void loop() {
 			if ((Mb.R[25] == 1) || (Mb.R[25] == 2)) {
 
 				if (Mb.R[25] == 1) {
-					RotateLeft();
-					Mb.R[20] = 1;
+					if (digitalRead(handIsLeft) == 0) {
+						RotateLeft();
+						Mb.R[20] = 1;
+					}
+					else {
+						Serial.println("--> Hand is already left. ");
+						flashError();
+					}
+					
 				}
 				else if (Mb.R[25] == 2) {
-
-					RotateRight();
-					Mb.R[20] = 2;
+					if (digitalRead(handIsRight) == 0) {
+						RotateRight();
+						Mb.R[20] = 2;
+					}
+					else {
+						Serial.println("--> Hand is already right. ");
+						flashError();
+					}
+					
 				}
 
 				Mb.R[25] = 0;
@@ -556,7 +568,6 @@ void loop() {
 			}
 		} while (isHandFull == true); /// možda još ubaciti uvjet da Mb.R[0] == 1
 
-		
 		if (modeMessage != "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].") {
 			modeMessage = "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].";
 			Serial.println(modeMessage);
@@ -585,26 +596,36 @@ void loop() {
 //////////////////////////////// FUNCTIONS //////////////////////////////////////////////
 void TableGoRight() {
 
-	isMoving = true;
-	Serial.print("--> Going right. ");
+	if ((digitalRead(C5_izvucen) == 0) || (digitalRead(C6_izvucen) == 0)) {
+		isMoving = true;
+		Serial.print("--> Going right. ");
 
-	digitalWrite(CONTROLLINO_R6, HIGH);
-	digitalWrite(CONTROLLINO_R5, HIGH);
-	delay(cooldown);
+		digitalWrite(CONTROLLINO_R6, HIGH);
+		digitalWrite(CONTROLLINO_R5, HIGH);
+		delay(cooldown);
 
-	while (isMoving == true) {
-		Serial.print("Waiting for input from sensors C5 and C6... ");
-		if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_izvucen) == 1)) {
-			isMoving = false;
-			Serial.println("Move completed.");
+		while (isMoving == true) {
+			Serial.print("Waiting for input from sensors C5 and C6... ");
+			if ((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_izvucen) == 1)) {
+				isMoving = false;
+				Serial.println("Move completed. ");
+			}
 		}
 	}
+	else {
+		Serial.println("--> Can't go anymore right.");
+		digitalWrite(LED_Error, 1);
+		delay(500);
+		digitalWrite(LED_Error, 0);
+	}
+
+	
 
 
 }
 
 void TableGoLeft() {
-	if (isMoving == false) {
+	if ((digitalRead(C5_uvucen) == 0) || (digitalRead(C6_uvucen) == 0)) {
 
 		isMoving = true;
 		Serial.print("--> Going left. ");
@@ -622,6 +643,12 @@ void TableGoLeft() {
 			}
 		}
 
+	}
+	else {
+		Serial.println("--> Can't go anymore left.");
+		digitalWrite(LED_Error, 1);
+		delay(500);
+		digitalWrite(LED_Error, 0);
 	}
 
 }
