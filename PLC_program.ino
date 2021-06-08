@@ -178,14 +178,23 @@ void setup() {
 //////////////////////////////// MAIN //////////////////////////////////////////////
 void loop() {
 
-	while (Mb.R[0] != 1) {
-		if (debugMessage != "Ready to start. ") {
-			debugMessage = "Ready to start. ";
+	while (Mb.R[2] != 1) {
+		if (debugMessage != "--> Ready to start. ") {
+			debugMessage = "--> Ready to start. ";
 			Serial.println(debugMessage);
 		}
+		Mb.Run();
+		if (Mb.R[0] == 2) {
+			Mb.Run();
+			for (byte i = 1; i < 10; i++) {
+				tableLeft[i] = 0;
+				tableRight[i] = 1;
+			}
+		}
+
 		digitalWrite(LED_Start, 0);
 		delay(500);
-		Mb.Run();
+		
 		digitalWrite(LED_Start, 1);
 		delay(500);
 		Mb.Run();
@@ -195,8 +204,8 @@ void loop() {
 	
 	switch (Mb.R[3]) {
 	case 1:
-		if (modeMessage != "Auto-mode selected.") {
-			modeMessage = "Auto-mode selected. ";
+		if (modeMessage != "--> Auto-mode selected.") {
+			modeMessage = "--> Auto-mode selected. ";
 			Serial.println(debugMessage);
 		}
 
@@ -358,6 +367,10 @@ void loop() {
 			Serial.println(modeMessage);
 		}
 		
+		if (Mb.R[9] == 0) {
+			Mb.R[9] = currentTableSide();
+		}
+
 		do {
 			Mb.Run();
 
@@ -425,6 +438,9 @@ void loop() {
 
 		break;
 	case 3:
+		if (Mb.R[20] == 0) {
+			Mb.R[20] = currentTableSide();
+		}
 		do {
 			Mb.Run();
 			//go up
@@ -541,6 +557,13 @@ void loop() {
 				if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == false) {
 					PawnPickUpNeo();
 
+					if (currentTableSide() == 1) {
+						tableLeft[currentPawnPosition()] = 0;
+					}
+					else if (currentTableSide() == 2) {
+						tableRight[currentPawnPosition()] = 0;
+					}
+
 					Serial.print("--> Picked pawn from position: ");
 					Serial.println(currentPawnPosition());
 				}
@@ -556,6 +579,13 @@ void loop() {
 				if (IsSpotEmpty(currentTableSide(), currentPawnPosition()) == true) {
 					PawnDrop();
 
+					if (currentTableSide() == 1) {
+						tableLeft[currentPawnPosition()] = 1;
+					}
+					else if (currentTableSide() == 2) {
+						tableRight[currentPawnPosition()] = 1;
+					}
+
 					Serial.print("--> Picked pawn from position: ");
 					Serial.println(currentPawnPosition());
 				}
@@ -566,7 +596,7 @@ void loop() {
 
 				Mb.R[27] = 0;
 			}
-		} while (isHandFull == true); /// možda još ubaciti uvjet da Mb.R[0] == 1
+		} while (isHandFull == true); /// možda još ubaciti uvjet da Mb.R[2] == 1
 
 		if (modeMessage != "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].") {
 			modeMessage = "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].";
@@ -1139,7 +1169,7 @@ void StartPressed() {
 	digitalWrite(LED_Start, LOW);
 	digitalWrite(LED_Stop, LOW);
 
-	Mb.R[0] = 1;
+	Mb.R[2] = 1;
 	Mb.R[1] = 0;
 
 }
@@ -1147,7 +1177,7 @@ void StartPressed() {
 void StopPressed() {
 	Serial.println("--> Stop pressed.");
 	Mb.R[1] = 1;
-	Mb.R[0] = 0;
+	Mb.R[2] = 0;
 	digitalWrite(LED_Stop, HIGH);
 }
 
@@ -1640,13 +1670,13 @@ byte currentPawnPosition() {
 		if ((digitalRead(C1_uvucen) == 1) && (digitalRead(C2_uvucen) == 1)) {
 
 			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
-				return 7;
+				return 1;
 			}
 			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
-				return 8;
+				return 2;
 			}
 			else {
-				return 9;
+				return 3;
 			}
 
 		}
@@ -1666,13 +1696,13 @@ byte currentPawnPosition() {
 		else {
 
 			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
-				return 1;
+				return 7;
 			}
 			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
-				return 2;
+				return 8;
 			}
 			else {
-				return 3;
+				return 9;
 			}
 
 		}
@@ -1682,13 +1712,13 @@ byte currentPawnPosition() {
 		if ((digitalRead(C3_uvucen) == 1) && (digitalRead(C4_uvucen) == 1)) {
 
 			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
-				return 7;
+				return 1;
 			}
 			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
-				return 8;
+				return 2;
 			}
 			else {
-				return 9;
+				return 3;
 			}
 
 		}
@@ -1708,13 +1738,13 @@ byte currentPawnPosition() {
 		else {
 
 			if ((digitalRead(C5_uvucen) == 1) && (digitalRead(C6_uvucen) == 1)) {
-				return 1;
+				return 7;
 			}
 			else if (((digitalRead(C5_izvucen) == 1) && (digitalRead(C6_uvucen) == 1)) || ((digitalRead(C6_izvucen) == 1) && (digitalRead(C5_uvucen) == 1))) {
-				return 2;
+				return 8;
 			}
 			else {
-				return 3;
+				return 9;
 			}
 
 		}
