@@ -193,9 +193,7 @@ void loop() {
 
 	Mb.Run();
 	
-	if (isHandFull == true) {
-		Mb.R[3] = 2;
-	}
+
 	switch (Mb.R[3]) {
 	case 1:
 		if (modeMessage != "Auto-mode selected.") {
@@ -360,72 +358,76 @@ void loop() {
 			modeMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
 			Serial.println(modeMessage);
 		}
-		if ((Mb.R[9] == 1) || (Mb.R[9] == 2)) {
-			if ((Mb.R[10] >= 1) && (Mb.R[10] <= 9)) {
-				//dodati debug komentare što više, 
-				if (Mb.R[9] == 1) {
+		
+		do {
+			Mb.Run();
 
-					if ((isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == true)) {
-						RotateLeft();
-						GoTo(1, Mb.R[10]);
-						PawnDrop();
-						tableLeft[Mb.R[10]] = 1;
+			if ((Mb.R[9] == 1) || (Mb.R[9] == 2)) {
+				if ((Mb.R[10] >= 1) && (Mb.R[10] <= 9)) {
+					//dodati debug komentare što više, 
+					if (Mb.R[9] == 1) {
 
-						Mb.R[9] = 2;
-						Mb.R[10] = 0;
-						isHandFull == false;
-					}
-					else if (IsSpotEmpty(1, Mb.R[10]) == false) {
-						RotateLeft();
-						GoTo(1, Mb.R[10]);
-						PawnPickUpNeo();
-						tableLeft[Mb.R[10]] = 0;
+						if ((isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == true)) {
+							RotateLeft();
+							GoTo(1, Mb.R[10]);
+							PawnDrop();
+							tableLeft[Mb.R[10]] = 1;
 
-						Mb.R[9] = 2;
-						Mb.R[10] = 0;
-						isHandFull = true;
-					}
-					else {
-						Serial.println("The choosen position on the left table is empty.");
-					}
-				}
-				else if (Mb.R[9] == 2) {
-					if ((isHandFull == true) && (IsSpotEmpty(2, Mb.R[10]) == true)) {
-						RotateRight();
-						GoTo(2, Mb.R[10]);
-						PawnDrop();
-						tableRight[Mb.R[10]] = 1;
+							Mb.R[9] = 2;
+							Mb.R[10] = 0;
+							isHandFull == false;
+						}
+						else if (IsSpotEmpty(1, Mb.R[10]) == false) {
+							RotateLeft();
+							GoTo(1, Mb.R[10]);
+							PawnPickUpNeo();
+							tableLeft[Mb.R[10]] = 0;
 
-						Mb.R[9] = 1;
-						Mb.R[10] = 0;
-						isHandFull == false;
-					}
-					else if (IsSpotEmpty(2, Mb.R[10]) == false) {
-						RotateRight();
-						GoTo(2, Mb.R[10]);
-						PawnPickUpNeo();
-						tableRight[Mb.R[10]] = 0;
-
-						Mb.R[9] = 1;
-						Mb.R[10] = 0;
-						isHandFull = true;
-					}
-					else {
-						if (debugMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
-							debugMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
-							Serial.println(debugMessage);
+							Mb.R[9] = 2;
+							Mb.R[10] = 0;
+							isHandFull = true;
+						}
+						else {
+							Serial.println("The choosen position on the left table is empty.");
 						}
 					}
-				}
+					else if (Mb.R[9] == 2) {
+						if ((isHandFull == true) && (IsSpotEmpty(2, Mb.R[10]) == true)) {
+							RotateRight();
+							GoTo(2, Mb.R[10]);
+							PawnDrop();
+							tableRight[Mb.R[10]] = 1;
 
+							Mb.R[9] = 1;
+							Mb.R[10] = 0;
+							isHandFull == false;
+						}
+						else if (IsSpotEmpty(2, Mb.R[10]) == false) {
+							RotateRight();
+							GoTo(2, Mb.R[10]);
+							PawnPickUpNeo();
+							tableRight[Mb.R[10]] = 0;
+
+							Mb.R[9] = 1;
+							Mb.R[10] = 0;
+							isHandFull = true;
+						}
+						else {
+							if (debugMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
+								debugMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
+								Serial.println(debugMessage);
+							}
+						}
+					}
+
+				}
 			}
-		}
+		} while (isHandFull == true);
 
 		break;
 	case 3:
 		do {
 			Mb.Run();
-			Mb.R[3] = 3;
 			//go up
 			if (Mb.R[21] == 1) {
 				if (Mb.R[20] == 1) {
@@ -514,6 +516,7 @@ void loop() {
 					Mb.R[20] = 1;
 				}
 				else if (Mb.R[25] == 2) {
+
 					RotateRight();
 					Mb.R[20] = 2;
 				}
@@ -553,6 +556,7 @@ void loop() {
 			}
 		} while (isHandFull == true); /// možda još ubaciti uvjet da Mb.R[0] == 1
 
+		
 		if (modeMessage != "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].") {
 			modeMessage = "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].";
 			Serial.println(modeMessage);
