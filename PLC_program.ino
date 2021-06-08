@@ -19,17 +19,16 @@ int counter = 0;
 char selectMode;
 
 unsigned long longValue = 111111111; // za izbrisati
-unsigned long message;
+unsigned long message;					// isto
 
 uint32_t loWord, hiWord;
 int messageArray[10];
 
-int	messageArray1[10] = { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-byte delete1 = 0;
-bool digiRead = true; //pleae delete immediately
-
 unsigned int temp1 = 0;
 unsigned int temp2 = 0;
+unsigned int temp3 = 12345;
+unsigned int temp4 = 12345;
+
 byte i;
 byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
@@ -39,7 +38,7 @@ String modeMessage = "";
 String messageString;
 byte selectHand = 1;
 byte handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
-byte workMode = 0;                 // Select work mode (1-Auto, 2-Jog)
+byte workMode = 0;                 // Select work mode (1-Auto, 2-Point to point, 3-Jog)
 
 bool isUp = false;                 // Body is or isn't in elevated position.    
 bool isMoving = false;             // The manipulator is or isn't moving.
@@ -194,179 +193,186 @@ void loop() {
 
 		digitalWrite(LED_Start, 0);
 		delay(500);
-		
+
 		digitalWrite(LED_Start, 1);
 		delay(500);
 		Mb.Run();
 	}
 
 	Mb.Run();
-	
+
 	switch (Mb.R[3]) {
 	case 1:
 		if (modeMessage != "--> Auto-mode selected.") {
 			modeMessage = "--> Auto-mode selected. ";
-			Serial.println(debugMessage);
+			Serial.println(modeMessage);
 		}
 
 		temp1 = Mb.R[5];
 		temp2 = Mb.R[6];
-		message = makeLong(temp1, temp2);
-		messageString = String(message); //String(message);
 
+		if ((temp1 != temp3) || (temp4 != Mb.R[9])) {
 
-		Serial.print(" The re-converted received message is: ");
-		Serial.println(messageString);
+			message = makeLong(temp1, temp2); //možda staviti odmah Mb.R[5] i 6
+			messageString = String(message);
 
-		if (messageString.length() == 9) {
-			for (char i = 0; i < 9; i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i + 1] = arrayPart.toInt();
+			Serial.print(" The re-converted received message is: ");
+			Serial.println(messageString);
+
+			if (messageString.length() == 9) {
+				for (char i = 0; i < 9; i++) {
+					arrayPart = messageString.charAt(i);
+					messageArray[i + 1] = arrayPart.toInt();
+				}
+				messageArray[0] = 0;
 			}
-			messageArray[0] = 0;
+			else if (messageString.length() < 9) {
+				for (char i = 0; i < messageString.length(); i++) {
+					arrayPart = messageString.charAt(i);
+					messageArray[i + (10 - messageString.length())] = arrayPart.toInt();
+				}
+				for (char i = 1; i < (10 - messageString.length()); i++) {
+					messageArray[i] = 0;
+				}
+				messageArray[0] = NULL;
+			}
+
+			Serial.print("Our message Int array is: ");    //printanje arraya
+			for (int i = 1; i < 10; i++)
+			{
+				Serial.print(messageArray[i]);
+			} Serial.println(" ");
+
+
+			if (messageString.length() < 10) {
+				if (Mb.R[9] == 1) {
+					Serial.println("--> Filling table 1. ");
+					for (byte j = 1; j < 10; j++) {
+						Mb.Run();
+						if (messageArray[j] == 1) {
+							//ako već nema figura tamo na tom mjestu:
+							if (tableLeft[j] != 1) {
+								//nadji prvu dostupnu desno i odi tamo
+								pawnTemp = FindAvailablePawn(2); //dobit ćemo broj od 1-9
+								if (pawnTemp != 0) {
+									RotateRight();
+									GoTo(2, pawnTemp);
+									PawnPickUpNeo();
+									tableRight[pawnTemp] = 0;
+
+									//nazad na željeni stol
+									RotateLeft();
+									GoTo(1, j);
+
+									PawnDrop();
+									tableLeft[j] = 1;
+
+								}
+								else {
+									Serial.println("No pawns available at right table");
+								}
+							}
+						}
+						else if (messageArray[j] == 0) {
+							if (tableLeft[j] == 1) {
+								pawnTemp = FindFreeSpot(2); //dobit ćemo broj od 1-9
+								if (pawnTemp != 0) {
+									RotateLeft();
+									GoTo(1, j);
+									PawnPickUpNeo();
+									tableLeft[1] = 0;
+
+									//nazad na željeni stol
+									RotateRight();
+									GoTo(2, pawnTemp);
+									PawnDrop();
+									tableRight[pawnTemp] = 1;
+								}
+								else {
+									Serial.println("No pawns available at right table. ");
+								}
+							}
+						}
+					}
+					if (debugMessage != "Auto-mode transfer completed. ") {
+						debugMessage = "Auto-mode transfer completed. ";
+						Serial.println(" ");
+						Serial.println(debugMessage);
+					}
+				}
+				else if (Mb.R[9] == 2) {
+					Serial.println("--> Filling table 2. ");
+					for (byte j = 1; j < 10; j++) {
+						Mb.Run();
+
+						if (messageArray[j] == 1) {
+							//ako već nema figura tamo na tom mjestu
+							if (tableRight[j] != 1) {
+								//nadji prvu dostupnu lijevo i odi tamo
+								pawnTemp = FindAvailablePawn(1);
+								if (pawnTemp != 0) {
+									RotateLeft();
+									GoTo(1, pawnTemp);
+									PawnPickUpNeo();
+									tableLeft[pawnTemp] = 0;
+
+									//nazad na trazeni stol
+									RotateRight();
+									GoTo(2, j);
+									PawnDrop();
+									tableRight[j] = 1;
+								}
+								else {
+									Serial.println("No pawns available at right table");
+								}
+							}
+						}
+						else if (messageArray[j] == 0) {
+							if (tableRight[j] == 1) {
+								pawnTemp = FindFreeSpot(1); //dobit ćemo broj od 1-9
+								if (pawnTemp != 0) {
+									RotateRight();
+									GoTo(1, j);
+									PawnPickUpNeo();
+									tableRight[j] = 0;
+
+									RotateLeft();
+									GoTo(2, pawnTemp);
+									PawnDrop();
+									tableLeft[pawnTemp] = 1;
+								}
+								else {
+									Serial.println("No pawns available at right table");
+								}
+							}
+						}
+					}
+					if (debugMessage != "Auto-mode transfer completed.") {
+						debugMessage = "Auto-mode transfer completed.";
+						Serial.println(" ");Serial.println(debugMessage);Serial.println(" ");
+
+					}
+				}
+				else {
+					Serial.println("Wrong table side choosen. Check input.");
+				}
+
+			}
+			temp3 = Mb.R[5];
+			temp4 = Mb.R[9];
+			if (debugMessage != "Auto-movement fullfiled. ") {
+				debugMessage = "Auto-movement fullfiled. ";
+				Serial.println(debugMessage);
+			}
 		}
-		else if (messageString.length() < 9) {
-			for (char i = 0; i < messageString.length(); i++) {
-				arrayPart = messageString.charAt(i);
-				messageArray[i + (10 - messageString.length())] = arrayPart.toInt();
-			}
-			for (char i = 1; i < (10 - messageString.length()); i++) {
-				messageArray[i] = 0;
-			}
-			messageArray[0] = NULL;
-			//0 000 000 001
-		}
-
-		Serial.print("Our message Int array is: ");    //printanje arraya
-		for (int i = 1; i < 10; i++)
-		{
-			Serial.print(messageArray[i]);
-		} Serial.println(" ");
-
-
-		if (messageString.length() < 10) {
-			if (Mb.R[9] == 1) {
-				Serial.println("Filling table 1.");
-				for (byte j = 1; j < 10; j++) {
-
-					if (messageArray[j] == 1) {
-						//ako već nema figura tamo na tom mjestu:
-						if (tableLeft[j] != 1) {
-							//nadji prvu dostupnu desno i odi tamo
-							pawnTemp = FindAvailablePawn(2); //dobit ćemo broj od 1-9
-							if (pawnTemp != 0) {
-								RotateRight();
-								GoTo(2, pawnTemp);
-								PawnPickUpNeo();
-								tableRight[pawnTemp] = 0;
-
-								//nazad na željeni stol
-								RotateLeft();
-								GoTo(1, j);
-
-								PawnDrop();
-								tableLeft[j] = 1;
-
-							}
-							else {
-								Serial.println("No pawns available at right table");
-							}
-						}
-					}
-					else if (messageArray[j] == 0) {
-						if (tableLeft[j] == 1) {
-							pawnTemp = FindFreeSpot(2); //dobit ćemo broj od 1-9
-							if (pawnTemp != 0) {
-								RotateLeft();
-								GoTo(1, j);
-								PawnPickUpNeo();
-								tableLeft[1] = 0;
-
-								//nazad na željeni stol
-								RotateRight();
-								GoTo(2, pawnTemp);
-								PawnDrop();
-								tableRight[pawnTemp] = 1;
-							}
-							else {
-								Serial.println("No pawns available at right table");
-							}
-						}
-					}
-				}
-				if (debugMessage != "Auto-mode transfer completed.") {
-					debugMessage = "Auto-mode transfer completed.";
-					Serial.println(" ");
-					Serial.println(debugMessage);
-				}
-			}
-			else if (Mb.R[9] == 2) {
-				Serial.println("Filling table 2.");
-				for (byte j = 1; j < 10; j++) {
-
-					if (messageArray[j] == 1) {
-						//ako već nema figura tamo na tom mjestu
-						if (tableRight[j] != 1) {
-							//nadji prvu dostupnu lijevo i odi tamo
-							pawnTemp = FindAvailablePawn(1);
-							if (pawnTemp != 0) {
-								RotateLeft();
-								GoTo(1, pawnTemp);
-								PawnPickUpNeo();
-								tableLeft[pawnTemp] = 0;
-
-								//nazad na trazeni stol
-								RotateRight();
-								GoTo(2, j);
-								PawnDrop();
-								tableRight[j] = 1;
-							}
-							else {
-								Serial.println("No pawns available at right table");
-							}
-						}
-					}
-					else if (messageArray[j] == 0) {
-						if (tableRight[j] == 1) {
-							pawnTemp = FindFreeSpot(1); //dobit ćemo broj od 1-9
-							if (pawnTemp != 0) {
-								RotateRight();
-								GoTo(1, j);
-								PawnPickUpNeo();
-								tableRight[j] = 0;
-
-								RotateLeft();
-								GoTo(2, pawnTemp);
-								PawnDrop();
-								tableLeft[pawnTemp] = 1;
-							}
-							else {
-								Serial.println("No pawns available at right table");
-							}
-						}
-					}
-				}
-				if (debugMessage != "Auto-mode transfer completed.") {
-					debugMessage = "Auto-mode transfer completed.";
-					Serial.println(" ");Serial.println(debugMessage);Serial.println(" ");
-
-				}
-			}
-			else {
-				Serial.println("Wrong table side choosen. Check input.");
-			}
-
-
-		}
-		Mb.R[3] = 10;
 
 		break;
 	case 2:
-		if (modeMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
-			modeMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
+		if (modeMessage != "--> Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9). ") {
+			modeMessage = "--> Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9). ";
 			Serial.println(modeMessage);
 		}
-		
+
 		if (Mb.R[9] == 0) {
 			Mb.R[9] = currentTableSide();
 		}
@@ -438,6 +444,18 @@ void loop() {
 
 		break;
 	case 3:
+		if (modeMessage != "--> Jog mode. At any time you can select the side to manually operate by choosing 1 or 2 in Mb.R[20].") {
+			modeMessage = "--> Jog mode. At any time you can select the side to manually operate by choosing 1 or 2 in Mb.R[20].";
+			Serial.println(modeMessage);
+
+			if (digitalRead(handIsLeft) == 1) {
+				Mb.R[20] = 1;
+			}
+			else if (digitalRead(handIsRight) == 1) {
+				Mb.R[20] = 2;
+			}
+		}
+
 		if (Mb.R[20] == 0) {
 			Mb.R[20] = currentTableSide();
 		}
@@ -535,7 +553,7 @@ void loop() {
 						Serial.println("--> Hand is already left. ");
 						flashError();
 					}
-					
+
 				}
 				else if (Mb.R[25] == 2) {
 					if (digitalRead(handIsRight) == 0) {
@@ -546,7 +564,7 @@ void loop() {
 						Serial.println("--> Hand is already right. ");
 						flashError();
 					}
-					
+
 				}
 
 				Mb.R[25] = 0;
@@ -598,23 +616,9 @@ void loop() {
 			}
 		} while (isHandFull == true); /// možda još ubaciti uvjet da Mb.R[2] == 1
 
-		if (modeMessage != "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].") {
-			modeMessage = "Jog mode mode. Please select a table side first my choosing 1 or 2 in Mb.R[20].";
-			Serial.println(modeMessage);
-
-			if (digitalRead(handIsLeft) == 1) {
-				Mb.R[20] = 1;
-			}
-			else if (digitalRead(handIsRight) == 1) {
-				Mb.R[20] = 2;
-			}
-		}
-		break;
-	case 4:
-
 		break;
 	default:
-		if (modeMessage != "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
+		if (modeMessage != "--> Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
 			modeMessage = "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].";
 			Serial.println(modeMessage);
 		}
@@ -649,7 +653,7 @@ void TableGoRight() {
 		digitalWrite(LED_Error, 0);
 	}
 
-	
+
 
 
 }
