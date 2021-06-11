@@ -29,7 +29,7 @@ unsigned int temp2 = 0;
 unsigned int temp3 = 12345;
 unsigned int temp4 = 12345;
 
-byte i;
+byte i;// za izbrisati
 byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
 String arrayPart;
@@ -37,8 +37,8 @@ String debugMessage = " ";
 String modeMessage = "";
 String messageString;
 byte selectHand = 1;
-byte handSlot[1];                  // Defines if slot 0 (lower postion) or 1 (upper position) is empty/full
-byte workMode = 0;                 // Select work mode (1-Auto, 2-Point to point, 3-Jog)
+byte handSlot[1];                  // za izbrisati
+byte workMode = 0;                // za izbrisati
 
 bool isUp = false;                 // Body is or isn't in elevated position.    
 bool isMoving = false;             // The manipulator is or isn't moving.
@@ -46,9 +46,9 @@ bool isHandFull = false;
 
 byte tableLeft[10] = { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1 };//Actual state left table
 byte tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 };//Actual state right table
-int tempArray[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int tempArray[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // za izbrisati
 
-byte selectTable = Mb.R[10];
+byte selectTable = Mb.R[10]; // za izbrisati
 
 //Pin configuration:
 const byte C1_cilindar = CONTROLLINO_R1; // R1    Cilindar 1
@@ -171,6 +171,7 @@ void setup() {
 	for (i = 0; i < 125; i++) {                                 // Set every Modbus register value to 0
 		Mb.R[i] = 0;
 	}
+	Mb.R[5] = -1;
 	Serial.println("Modbus registers set to 0.");
 }
 
@@ -204,14 +205,14 @@ void loop() {
 	switch (Mb.R[3]) {
 	case 1:
 		if (modeMessage != "--> Auto-mode selected.") {
-			modeMessage = "--> Auto-mode selected. ";
+			modeMessage = "--> Auto-mode selected.";
 			Serial.println(modeMessage);
 		}
 
 		temp1 = Mb.R[5];
 		temp2 = Mb.R[6];
 
-		if ((temp1 != temp3) || (temp4 != Mb.R[9])) {
+		if ((Mb.R[5] >= 0) && ((Mb.R[9] == 1) || (Mb.R[9] == 2))) {
 
 			message = makeLong(temp1, temp2); //možda staviti odmah Mb.R[5] i 6
 			messageString = String(message);
@@ -249,11 +250,15 @@ void loop() {
 					Serial.println("--> Filling table 1. ");
 					for (byte j = 1; j < 10; j++) {
 						Mb.Run();
+						Serial.print("--> Doing j number: ");
+						Serial.println(j);
 						if (messageArray[j] == 1) {
 							//ako već nema figura tamo na tom mjestu:
 							if (tableLeft[j] != 1) {
 								//nadji prvu dostupnu desno i odi tamo
 								pawnTemp = FindAvailablePawn(2); //dobit ćemo broj od 1-9
+								Serial.print("--> Found pawn number: ");
+								Serial.println(pawnTemp);
 								if (pawnTemp != 0) {
 									RotateRight();
 									GoTo(2, pawnTemp);
@@ -276,20 +281,22 @@ void loop() {
 						else if (messageArray[j] == 0) {
 							if (tableLeft[j] == 1) {
 								pawnTemp = FindFreeSpot(2); //dobit ćemo broj od 1-9
-								if (pawnTemp != 0) {
+								Serial.print("Found free spot at table 2: ");
+								Serial.println(pawnTemp);
+								if (pawnTemp == 0) {
+									Serial.println("No free spot available at right table. ");
+								}
+								else {
 									RotateLeft();
 									GoTo(1, j);
 									PawnPickUpNeo();
-									tableLeft[1] = 0;
+									tableLeft[j] = 0;
 
 									//nazad na željeni stol
 									RotateRight();
 									GoTo(2, pawnTemp);
 									PawnDrop();
 									tableRight[pawnTemp] = 1;
-								}
-								else {
-									Serial.println("No pawns available at right table. ");
 								}
 							}
 						}
@@ -358,12 +365,26 @@ void loop() {
 				}
 
 			}
-			temp3 = Mb.R[5];
-			temp4 = Mb.R[9];
+
 			if (debugMessage != "Auto-movement fullfiled. ") {
 				debugMessage = "Auto-movement fullfiled. ";
 				Serial.println(debugMessage);
+
+				Serial.print("Our table positions are on LEFT table: ");    //printanje arraya
+				for (int i = 1; i < 10; i++)
+				{
+					Serial.print(tableLeft[i]);
+				} Serial.println(" ");
+
+				Serial.print("Our table positions are on RIGHT table: ");    //printanje arraya
+				for (int i = 1; i < 10; i++)
+				{
+					Serial.print(tableRight[i]);
+				} Serial.println(" ");
 			}
+
+			Mb.R[5] = -1;
+			Mb.R[6] = 0;
 		}
 
 		break;
@@ -617,9 +638,31 @@ void loop() {
 		} while (isHandFull == true); /// možda još ubaciti uvjet da Mb.R[2] == 1
 
 		break;
+	case 4:
+
+		
+			for (i = 1; i < 10; i++) {
+				if (tableLeft[i] == 1) {
+					Serial.print("Found available pawn at: ");
+					Serial.println(tableLeft[i]);
+					break;
+				}
+				Serial.println("This was gay to execute");
+				
+			}
+			
+		
+		Serial.println("/////////////////////////");
+		Serial.println(FindAvailablePawn(Mb.R[8]));
+		Serial.println(FindAvailablePawnOld(Mb.R[8]));
+		Serial.println(FindFreeSpot(Mb.R[8]));
+		Serial.println("/////////////////////////");
+
+
+		break;
 	default:
 		if (modeMessage != "--> Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
-			modeMessage = "Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].";
+			modeMessage = "--> Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].";
 			Serial.println(modeMessage);
 		}
 		break;
@@ -1599,8 +1642,32 @@ void PawnDrop() {
 	Serial.println("Pawn dropped. ");
 
 }
-
+//updated FindAvailablePawnn algorithm. not tested
 byte FindAvailablePawn(byte tableSide) {
+	byte pawn;
+	if (tableSide == 1) {
+		for (i = 1; i < 10; i++) {
+			if (tableLeft[i] == 1) {
+				pawn = i;
+				break;
+			}
+			pawn = 0;
+		}
+	}
+	else if (tableSide == 2) {
+		for (i = 1; i < 10; i++) {
+			if (tableRight[i] == 1) {
+				pawn = i;
+				break;
+			}
+			pawn = 0;
+		}
+		
+	}
+	return pawn;
+}
+//delete FindAvailablePawnnOld algorithm. using while is not a good idea
+byte FindAvailablePawnOld(byte tableSide) {
 	byte pawn = 0;
 	byte n = 1;
 	byte i = 0;
@@ -1631,38 +1698,24 @@ byte FindAvailablePawn(byte tableSide) {
 
 byte FindFreeSpot(byte tableSide) {
 	byte pawn;
-	byte n = 0;
-	//možda bude problem pretvoriti INT u BYTE
 	if (tableSide == 1) {
-		while (n == 0) {
-			for (i = 1; i < 10; i++) {
-				if (tableLeft[i] == 0) {
-					n = i;
-					pawn = i;
-				}
-				else if (tableLeft[9] == 1) {
-					n = 1;
-					pawn = 0;
-				}
+		for (i = 1; i < 10; i++) {
+			if (tableLeft[i] == 0) {
+				pawn = i;
+				break;
 			}
+			pawn = 0;
 		}
 	}
 	else if (tableSide == 2) {
-		while (n == 0) {
-			for (i = 1; i < 10; i++) {
-				if (tableRight[i] == 0) {
-					n = i;
-					pawn = i;
-				}
-				else if (tableRight[9] == 1) {
-					n = 1;
-					pawn = 0;
-				}
+		for (i = 1; i < 10; i++) {
+			if (tableRight[i] == 0) {
+				pawn = i;
+				break;
 			}
+			pawn = 0;
 		}
-	}
-	else {
-		pawn = 0;
+
 	}
 	return pawn;
 }
