@@ -244,7 +244,6 @@ void loop() {
 				Serial.print(messageArray[i]);
 			} Serial.println(" ");
 
-
 			if (messageString.length() < 10) {
 				if (Mb.R[9] == 1) {
 					Serial.println("--> Filling table 1. ");
@@ -257,9 +256,12 @@ void loop() {
 							if (tableLeft[j] != 1) {
 								//nadji prvu dostupnu desno i odi tamo
 								pawnTemp = FindAvailablePawn(2); //dobit ćemo broj od 1-9
-								Serial.print("--> Found pawn number: ");
+								Serial.print("--> Found pawn number at right table: ");
 								Serial.println(pawnTemp);
-								if (pawnTemp != 0) {
+								if (pawnTemp == 0) {
+									Serial.println("No pawns available at right table");
+								}
+								else {
 									RotateRight();
 									GoTo(2, pawnTemp);
 									PawnPickUpNeo();
@@ -271,17 +273,13 @@ void loop() {
 
 									PawnDrop();
 									tableLeft[j] = 1;
-
-								}
-								else {
-									Serial.println("No pawns available at right table");
 								}
 							}
 						}
 						else if (messageArray[j] == 0) {
 							if (tableLeft[j] == 1) {
 								pawnTemp = FindFreeSpot(2); //dobit ćemo broj od 1-9
-								Serial.print("Found free spot at table 2: ");
+								Serial.print("Found free spot at right table: ");
 								Serial.println(pawnTemp);
 								if (pawnTemp == 0) {
 									Serial.println("No free spot available at right table. ");
@@ -311,13 +309,20 @@ void loop() {
 					Serial.println("--> Filling table 2. ");
 					for (byte j = 1; j < 10; j++) {
 						Mb.Run();
-
+						Serial.print("--> Doing j number: ");
+						Serial.println(j);
 						if (messageArray[j] == 1) {
-							//ako već nema figura tamo na tom mjestu
 							if (tableRight[j] != 1) {
-								//nadji prvu dostupnu lijevo i odi tamo
+
 								pawnTemp = FindAvailablePawn(1);
-								if (pawnTemp != 0) {
+								Serial.print("--> Found pawn at left table: ");
+								Serial.println(pawnTemp);
+
+								if (pawnTemp == 0) {
+									Serial.println("No pawns available at left table");
+									
+								}
+								else {
 									RotateLeft();
 									GoTo(1, pawnTemp);
 									PawnPickUpNeo();
@@ -329,27 +334,26 @@ void loop() {
 									PawnDrop();
 									tableRight[j] = 1;
 								}
-								else {
-									Serial.println("No pawns available at right table");
-								}
 							}
 						}
 						else if (messageArray[j] == 0) {
 							if (tableRight[j] == 1) {
-								pawnTemp = FindFreeSpot(1); //dobit ćemo broj od 1-9
-								if (pawnTemp != 0) {
+								pawnTemp = FindFreeSpot(1); 
+								Serial.print("Found free spot at left table: ");
+								Serial.println(pawnTemp);
+								if (pawnTemp == 0) {
+									Serial.println("No free spot available at left table. ");
+								}
+								else {
 									RotateRight();
-									GoTo(1, j);
+									GoTo(2, j);
 									PawnPickUpNeo();
 									tableRight[j] = 0;
 
 									RotateLeft();
-									GoTo(2, pawnTemp);
+									GoTo(1, pawnTemp);
 									PawnDrop();
 									tableLeft[pawnTemp] = 1;
-								}
-								else {
-									Serial.println("No pawns available at right table");
 								}
 							}
 						}
@@ -357,7 +361,6 @@ void loop() {
 					if (debugMessage != "Auto-mode transfer completed.") {
 						debugMessage = "Auto-mode transfer completed.";
 						Serial.println(" ");Serial.println(debugMessage);Serial.println(" ");
-
 					}
 				}
 				else {
@@ -366,22 +369,17 @@ void loop() {
 
 			}
 
-			if (debugMessage != "Auto-movement fullfiled. ") {
-				debugMessage = "Auto-movement fullfiled. ";
-				Serial.println(debugMessage);
+			Serial.print("Our table positions are on LEFT table: ");    //printanje arraya
+			for (int i = 1; i < 10; i++)
+			{
+				Serial.print(tableLeft[i]);
+			} Serial.println(" ");
 
-				Serial.print("Our table positions are on LEFT table: ");    //printanje arraya
-				for (int i = 1; i < 10; i++)
-				{
-					Serial.print(tableLeft[i]);
-				} Serial.println(" ");
-
-				Serial.print("Our table positions are on RIGHT table: ");    //printanje arraya
-				for (int i = 1; i < 10; i++)
-				{
-					Serial.print(tableRight[i]);
-				} Serial.println(" ");
-			}
+			Serial.print("Our table positions are on RIGHT table: ");    //printanje arraya
+			for (int i = 1; i < 10; i++)
+			{
+				Serial.print(tableRight[i]);
+			} Serial.println(" ");
 
 			Mb.R[5] = -1;
 			Mb.R[6] = 0;
@@ -413,21 +411,26 @@ void loop() {
 							tableLeft[Mb.R[10]] = 1;
 
 							Mb.R[9] = 2;
-							Mb.R[10] = 0;
+							//Mb.R[10] = 0;
 							isHandFull == false;
 						}
-						else if (IsSpotEmpty(1, Mb.R[10]) == false) {
+						else if ((IsSpotEmpty(1, Mb.R[10]) == false) && (isHandFull == false)) {
 							RotateLeft();
 							GoTo(1, Mb.R[10]);
 							PawnPickUpNeo();
 							tableLeft[Mb.R[10]] = 0;
 
 							Mb.R[9] = 2;
-							Mb.R[10] = 0;
+							//Mb.R[10] = 0;
 							isHandFull = true;
 						}
 						else {
-							Serial.println("The choosen position on the left table is empty.");
+							if (debugMessage != "--> Can't do that move. ") {
+								debugMessage = "--> Can't do that move. ";
+								Serial.println(debugMessage);
+								flashError();
+							}
+
 						}
 					}
 					else if (Mb.R[9] == 2) {
@@ -438,28 +441,45 @@ void loop() {
 							tableRight[Mb.R[10]] = 1;
 
 							Mb.R[9] = 1;
-							Mb.R[10] = 0;
+							//Mb.R[10] = 0;
 							isHandFull == false;
 						}
-						else if (IsSpotEmpty(2, Mb.R[10]) == false) {
+						else if ((IsSpotEmpty(2, Mb.R[10]) == false) && (isHandFull == false)) {
 							RotateRight();
 							GoTo(2, Mb.R[10]);
 							PawnPickUpNeo();
 							tableRight[Mb.R[10]] = 0;
 
 							Mb.R[9] = 1;
-							Mb.R[10] = 0;
+							//Mb.R[10] = 0;
 							isHandFull = true;
 						}
 						else {
-							if (debugMessage != "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)") {
-								debugMessage = "Point-to-point mode. Please select a table side (1 or 2) and pawn position (1-9)";
+							if (debugMessage != "--> Can't do that move. ") {
+								debugMessage = "--> Can't do that move. ";
 								Serial.println(debugMessage);
+								flashError();
 							}
 						}
 					}
 
+					debugMessage = "Auto-movement fullfiled. ";
+					Serial.println(debugMessage);
+
+					Serial.print("Our table positions are on LEFT table: ");    //printanje arraya
+					for (int i = 1; i < 10; i++)
+					{
+						Serial.print(tableLeft[i]);
+					} Serial.println(" ");
+
+					Serial.print("Our table positions are on RIGHT table: ");    //printanje arraya
+					for (int i = 1; i < 10; i++)
+					{
+						Serial.print(tableRight[i]);
+					} Serial.println(" ");
+
 				}
+				Mb.R[10] = 0;
 			}
 		} while (isHandFull == true);
 
@@ -639,26 +659,6 @@ void loop() {
 
 		break;
 	case 4:
-
-		
-			for (i = 1; i < 10; i++) {
-				if (tableLeft[i] == 1) {
-					Serial.print("Found available pawn at: ");
-					Serial.println(tableLeft[i]);
-					break;
-				}
-				Serial.println("This was gay to execute");
-				
-			}
-			
-		
-		Serial.println("/////////////////////////");
-		Serial.println(FindAvailablePawn(Mb.R[8]));
-		Serial.println(FindAvailablePawnOld(Mb.R[8]));
-		Serial.println(FindFreeSpot(Mb.R[8]));
-		Serial.println("/////////////////////////");
-
-
 		break;
 	default:
 		if (modeMessage != "--> Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
@@ -667,9 +667,7 @@ void loop() {
 		}
 		break;
 	}
-
 }
-
 //////////////////////////////// FUNCTIONS //////////////////////////////////////////////
 void TableGoRight() {
 
@@ -1642,7 +1640,7 @@ void PawnDrop() {
 	Serial.println("Pawn dropped. ");
 
 }
-//updated FindAvailablePawnn algorithm. not tested
+
 byte FindAvailablePawn(byte tableSide) {
 	byte pawn;
 	if (tableSide == 1) {
@@ -1662,36 +1660,7 @@ byte FindAvailablePawn(byte tableSide) {
 			}
 			pawn = 0;
 		}
-		
-	}
-	return pawn;
-}
-//delete FindAvailablePawnnOld algorithm. using while is not a good idea
-byte FindAvailablePawnOld(byte tableSide) {
-	byte pawn = 0;
-	byte n = 1;
-	byte i = 0;
-	//možda bude problem pretvoriti INT u BYTE
-	if (tableSide == 1) {
-		while (i == 0) {
-			if (tableLeft[n] == 1) {
-				i = 1;
-				pawn = n;
-			}
-			n = n + 1;
-		}
-	}
-	else if (tableSide == 2) {
-		while (i == 0) {
-			if (tableRight[n] == 1) {
-				i = 1;
-				pawn = n;
-			}
-			n = n + 1;
-		}
-	}
-	else {
-		pawn = 0;
+
 	}
 	return pawn;
 }
