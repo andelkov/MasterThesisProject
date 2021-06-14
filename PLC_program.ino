@@ -320,7 +320,7 @@ void loop() {
 
 								if (pawnTemp == 0) {
 									Serial.println("No pawns available at left table");
-									
+
 								}
 								else {
 									RotateLeft();
@@ -338,7 +338,7 @@ void loop() {
 						}
 						else if (messageArray[j] == 0) {
 							if (tableRight[j] == 1) {
-								pawnTemp = FindFreeSpot(1); 
+								pawnTemp = FindFreeSpot(1);
 								Serial.print("Found free spot at left table: ");
 								Serial.println(pawnTemp);
 								if (pawnTemp == 0) {
@@ -401,7 +401,6 @@ void loop() {
 
 			if ((Mb.R[9] == 1) || (Mb.R[9] == 2)) {
 				if ((Mb.R[10] >= 1) && (Mb.R[10] <= 9)) {
-					//dodati debug komentare što više, 
 					if (Mb.R[9] == 1) {
 
 						if ((isHandFull == true) && (IsSpotEmpty(1, Mb.R[10]) == true)) {
@@ -659,16 +658,6 @@ void loop() {
 
 		break;
 	case 4:
-		
-		if (Mb.R[69] == 1) {
-			for (byte j = 1; j < 3; j++) {
-				for (byte i = 9; i > 0; i--) {
-					GoTo(j, i);
-				}
-			}
-			
-			Mb.R[69] = 0;
-		}
 
 		break;
 	default:
@@ -736,7 +725,6 @@ void TableGoLeft() {
 		delay(500);
 		digitalWrite(LED_Error, 0);
 	}
-
 }
 
 void TableGoCenterX() {
@@ -753,7 +741,6 @@ void TableGoCenterX() {
 			isMoving = false;
 			Serial.println("Move completed. Table in X centre. ");
 		}
-
 	}
 }
 
@@ -990,92 +977,102 @@ void TableGoDown(char tableSide) {
 }
 
 void RotateRight() {
+	if (digitalRead(handIsRight) == 1) {
+		Serial.println("---> Table is already right. ");
+	}
+	else {
+		if (isMoving == false && (isUp == true))  //maybe add "|| handSlot[0] == 0"
+		{
+			isMoving = true;
+			Serial.print("---> Rotating to the right.");
+			digitalWrite(C7_cilindar, HIGH);
+			delay(cooldown);
 
-	if (isMoving == false && (isUp == true))  //maybe add "|| handSlot[0] == 0"
-	{
-		isMoving = true;
-		Serial.print("---> Rotating to the right.");
-		digitalWrite(C7_cilindar, HIGH);
-		delay(cooldown);
+			while (isMoving == true) {
 
-		while (isMoving == true) {
-
-			if (digitalRead(handIsRight) == 1) {
-				isMoving = false;
-				Serial.println("Move completed.");
+				if (digitalRead(handIsRight) == 1) {
+					isMoving = false;
+					Serial.println("Move completed.");
+				}
 			}
 		}
-	}
-	else if ((isMoving == false) && (isUp == false)) //maybe add "|| handSlot[0] == 0"
-	{
-		isMoving = true;
-		Serial.print("---> Rotating to the right.");
-		digitalWrite(C8_cilindar, LOW);
-		delay(cooldown);
+		else if ((isMoving == false) && (isUp == false)) //maybe add "|| handSlot[0] == 0"
+		{
+			isMoving = true;
+			Serial.print("---> Rotating to the right.");
+			digitalWrite(C8_cilindar, LOW);
+			delay(cooldown);
 
-		isUp = true;
+			isUp = true;
 
-		digitalWrite(C7_cilindar, HIGH);
-		delay(cooldown);
+			digitalWrite(C7_cilindar, HIGH);
+			delay(cooldown);
 
-		while (isMoving == true) {
+			while (isMoving == true) {
 
-			if (digitalRead(handIsRight) == 1) {
-				isMoving = false;
-				Serial.println("Move completed.");
+				if (digitalRead(handIsRight) == 1) {
+					isMoving = false;
+					Serial.println("Move completed.");
+				}
 			}
 		}
+		else
+		{
+			Serial.println("---> Rotation to the right can't be perfomed. ");
+		}
 	}
-	else
-	{
-		Serial.println("---> Rotation to the right can't be perfomed. ");
-	}
+
 
 }
 
 void RotateLeft() {
+	if (digitalRead(handIsLeft) == 1) {
+		Serial.println("---> Table is already left. ");
+	}
+	else {
+		if (isMoving == false && (isUp == true)) //maybe add "|| handSlot[0] == 0"
+		{
+			isMoving = true;
+			Serial.print("---> The hand is up. Rotating to the left.");
 
-	if (isMoving == false && (isUp == true)) //maybe add "|| handSlot[0] == 0"
-	{
-		isMoving = true;
-		Serial.print("---> The hand is up. Rotating to the left.");
+			digitalWrite(C7_cilindar, LOW);
+			delay(cooldown);
 
-		digitalWrite(C7_cilindar, LOW);
-		delay(cooldown);
+			while (isMoving == true) {
 
-		while (isMoving == true) {
-
-			if (digitalRead(handIsLeft) == 1) {
-				isMoving = false;
-				Serial.println("Move completed.");
+				if (digitalRead(handIsLeft) == 1) {
+					isMoving = false;
+					Serial.println("Move completed.");
+				}
 			}
 		}
-	}
-	else if ((isMoving == false) && (isUp == false)) //maybe add "|| handSlot[0] == 0"
-	{
-		isMoving = true;
-		Serial.print("---> The hand is down. Rotating to the left.");
+		else if ((isMoving == false) && (isUp == false)) //maybe add "|| handSlot[0] == 0"
+		{
+			isMoving = true;
+			Serial.print("---> The hand is down. Rotating to the left.");
 
-		digitalWrite(C8_cilindar, LOW);
-		delay(cooldown);
+			digitalWrite(C8_cilindar, LOW);
+			delay(cooldown);
 
-		isUp = true;
+			isUp = true;
 
-		digitalWrite(C7_cilindar, LOW);
-		delay(cooldown);
+			digitalWrite(C7_cilindar, LOW);
+			delay(cooldown);
 
-		while (isMoving == true) {
+			while (isMoving == true) {
 
-			if (digitalRead(handIsLeft) == 1) {
-				isMoving = false;
-				Serial.println("Move completed.");
+				if (digitalRead(handIsLeft) == 1) {
+					isMoving = false;
+					Serial.println("Move completed.");
+				}
 			}
 		}
+		else
+		{
+			Serial.println("---> Rotation to the left can't be perfomed. ");
+		}
 	}
-	else
-	{
-		Serial.println("---> Rotation to the left can't be perfomed. ");
-	}
+
 
 
 
@@ -1304,7 +1301,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 	if (tableSide == 1) {
 
 		if ((pawnPosition == 1) || (pawnPosition == 4) || (pawnPosition == 7)) { // move table in x-axis
-			if (isMoving == false) {
+			if (digitalRead(C5_uvucen) == 0 || digitalRead(C6_uvucen) == 0) {
 
 				isMoving = true;
 				Serial.print("Going left. ");
@@ -1325,7 +1322,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 			}
 		}
 		else if ((pawnPosition == 2) || (pawnPosition == 5) || (pawnPosition == 8)) {
-			if (isMoving == false) {
+			if (digitalRead(C5_izvucen) == 0 || digitalRead(C6_uvucen) == 0) {
 
 				isMoving = true;
 				Serial.print("Going right. ");
@@ -1364,7 +1361,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 			}*/
 		}
 		else if ((pawnPosition == 3) || (pawnPosition == 6) || (pawnPosition == 9)) {
-			if (isMoving == false) {
+			if (digitalRead(C5_izvucen) == 0 || digitalRead(C6_izvucen) == 0) {
 
 				isMoving = true;
 				Serial.print("Going right. ");
@@ -1387,7 +1384,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 		}
 
 		if ((pawnPosition == 1) || (pawnPosition == 2) || (pawnPosition == 3)) {
-			if (isMoving == false) {
+			if (digitalRead(C1_uvucen) == 0 || digitalRead(C2_uvucen) == 0) {
 				isMoving = true;
 				Serial.print("Moving left table up. ");
 
@@ -1406,7 +1403,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 			}
 		}
 		else if ((pawnPosition == 4) || (pawnPosition == 5) || (pawnPosition == 6)) {
-			if (isMoving == false) {
+			if (digitalRead(C1_izvucen) != 1 || digitalRead(C2_uvucen) != 1) {
 				isMoving = true;
 				Serial.print("Moving left table to centre. ");
 
@@ -1425,7 +1422,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 			}
 		}
 		else if ((pawnPosition == 7) || (pawnPosition == 8) || (pawnPosition == 9)) {
-			if (isMoving == false) {
+			if (digitalRead(C1_izvucen) == 0 || digitalRead(C2_izvucen) == 0) {
 				isMoving = true;
 				Serial.print("Moving left table down. ");
 
@@ -1497,7 +1494,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 				}
 
 			};
-			
+
 		}
 		else if ((pawnPosition == 3) || (pawnPosition == 6) || (pawnPosition == 9)) {
 			if (isMoving == false) {
@@ -1639,7 +1636,7 @@ void PawnDrop() {
 byte FindAvailablePawn(byte tableSide) {
 	byte pawn;
 	if (tableSide == 1) {
-		for (byte i = 1; i < 10; i++) {
+		for (byte i = 9; i > 0; i--) {
 			if (tableLeft[i] == 1) {
 				pawn = i;
 				break;
@@ -1648,7 +1645,7 @@ byte FindAvailablePawn(byte tableSide) {
 		}
 	}
 	else if (tableSide == 2) {
-		for (byte i = 1; i < 10; i++) {
+		for (byte i = 9; i > 0; i--) {
 			if (tableRight[i] == 1) {
 				pawn = i;
 				break;
