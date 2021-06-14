@@ -29,7 +29,7 @@ unsigned int temp2 = 0;
 unsigned int temp3 = 12345;
 unsigned int temp4 = 12345;
 
-byte i;// za izbrisati
+//byte i;// za izbrisati
 byte pawnTemp;						// Store position of a temporarly selected pawn
 byte tableSide;
 String arrayPart;
@@ -168,7 +168,7 @@ void setup() {
 	attachInterrupt(digitalPinToInterrupt(interruptStartPin), StartPressed, FALLING);
 	attachInterrupt(digitalPinToInterrupt(interruptStopPin), StopPressed, RISING);
 
-	for (i = 0; i < 125; i++) {                                 // Set every Modbus register value to 0
+	for (byte i = 0; i < 125; i++) {                                 // Set every Modbus register value to 0
 		Mb.R[i] = 0;
 	}
 	Mb.R[5] = -1;
@@ -659,6 +659,17 @@ void loop() {
 
 		break;
 	case 4:
+		
+		if (Mb.R[69] == 1) {
+			for (byte j = 1; j < 3; j++) {
+				for (byte i = 9; i > 0; i--) {
+					GoTo(j, i);
+				}
+			}
+			
+			Mb.R[69] = 0;
+		}
+
 		break;
 	default:
 		if (modeMessage != "--> Please select a mode [1-Auto, 2 - Point-to-point, 3-Jog].") {
@@ -1334,7 +1345,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 				}
 
 			};
-			if (isMoving == false) {
+			/*if (isMoving == false) {
 				isMoving = true;
 				Serial.print("Moving left table to centre. ");
 
@@ -1350,7 +1361,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 						Serial.println("Move completed.");
 					}
 				}
-			}
+			}*/
 		}
 		else if ((pawnPosition == 3) || (pawnPosition == 6) || (pawnPosition == 9)) {
 			if (isMoving == false) {
@@ -1486,23 +1497,7 @@ void GoTo(byte tableSide, byte pawnPosition) {
 				}
 
 			};
-			if (isMoving == false) {
-				isMoving = true;
-				Serial.print("Moving right table to centre. ");
-
-				digitalWrite(C3_cilindar, HIGH);
-				digitalWrite(C4_cilindar, LOW);
-				delay(cooldown);
-
-				Serial.print("Waiting for input from sensors on C3 and C4. ");
-				while (isMoving == true) {
-
-					if (digitalRead(C3_izvucen) == 1 && digitalRead(C4_uvucen) == 1) {
-						isMoving = false;
-						Serial.println("Move completed.");
-					}
-				}
-			}
+			
 		}
 		else if ((pawnPosition == 3) || (pawnPosition == 6) || (pawnPosition == 9)) {
 			if (isMoving == false) {
@@ -1644,7 +1639,7 @@ void PawnDrop() {
 byte FindAvailablePawn(byte tableSide) {
 	byte pawn;
 	if (tableSide == 1) {
-		for (i = 1; i < 10; i++) {
+		for (byte i = 1; i < 10; i++) {
 			if (tableLeft[i] == 1) {
 				pawn = i;
 				break;
@@ -1653,7 +1648,7 @@ byte FindAvailablePawn(byte tableSide) {
 		}
 	}
 	else if (tableSide == 2) {
-		for (i = 1; i < 10; i++) {
+		for (byte i = 1; i < 10; i++) {
 			if (tableRight[i] == 1) {
 				pawn = i;
 				break;
@@ -1668,7 +1663,7 @@ byte FindAvailablePawn(byte tableSide) {
 byte FindFreeSpot(byte tableSide) {
 	byte pawn;
 	if (tableSide == 1) {
-		for (i = 1; i < 10; i++) {
+		for (byte i = 1; i < 10; i++) {
 			if (tableLeft[i] == 0) {
 				pawn = i;
 				break;
@@ -1677,7 +1672,7 @@ byte FindFreeSpot(byte tableSide) {
 		}
 	}
 	else if (tableSide == 2) {
-		for (i = 1; i < 10; i++) {
+		for (byte i = 1; i < 10; i++) {
 			if (tableRight[i] == 0) {
 				pawn = i;
 				break;
