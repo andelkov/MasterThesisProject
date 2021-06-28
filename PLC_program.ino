@@ -83,7 +83,7 @@ volatile byte stopPressed = LOW;
 
 void setup() {
 	uint8_t mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x51, 0x06 };
-	uint8_t ip[] = { 192, 168, 0, 160 }; 
+	uint8_t ip[] = { 192, 168, 0, 160 };
 	uint8_t gateway[] = { 161, 53, 116, 1 };
 	uint8_t subnet[] = { 255, 255, 252, 0 };
 	Ethernet.begin(mac, ip, subnet);
@@ -184,7 +184,7 @@ void loop() {
 		temp1 = Mb.R[6];
 		temp2 = Mb.R[5];
 
-		if ((Mb.R[5] >= 0) && ((Mb.R[7] == 1) || (Mb.R[7] == 2))) {
+		if ((Mb.R[6] >= 0) && ((Mb.R[7] == 1) || (Mb.R[7] == 2))) {
 
 			message = makeLong(temp1, temp2);
 			Serial.print("Received Mb.R[5] and Mb.R[6] messages: ");
@@ -200,6 +200,7 @@ void loop() {
 
 			Serial.print(" The re-converted received message is: ");
 			Serial.println(messageString);
+			Serial.println(onlyBinaryNumbers(messageString));
 
 			if (messageString.length() == 9) {
 				for (char i = 0; i < 9; i++) {
@@ -225,7 +226,7 @@ void loop() {
 				Serial.print(messageArray[i]);
 			} Serial.println(" ");
 
-			if (messageString.length() < 10) {
+			if ((messageString.length() < 10) && (onlyBinaryNumbers(messageString) == true)) {
 				if (Mb.R[7] == 1) {
 					Serial.println("--> Filling table 1. ");
 					for (byte j = 1; j < 10; j++) {
@@ -343,6 +344,10 @@ void loop() {
 				else {
 					Serial.println("Wrong table side choosen. Check input.");
 				}
+			}
+			else {
+				Mb.R[6] = -1;
+				Mb.R[5] = 0;
 			}
 
 			Serial.print("Our table positions are on LEFT table: ");
@@ -631,9 +636,15 @@ void loop() {
 		break;
 	case 4:
 		//For testing:
-		Serial.println("Received message:");
-		Serial.println(Mb.R[5]);
-		Serial.println(Mb.R[6]);
+		temp1 = Mb.R[6];
+		temp2 = Mb.R[5];
+
+		message = makeLong(temp1, temp2);
+		Serial.print("Message string is: ");
+		messageString = String(message);
+		Serial.print(messageString);
+
+	
 
 		Mb.R[3] = 5;
 		break;
@@ -882,7 +893,7 @@ void rotateRight() {
 		digitalWrite(LED_Error, 1);
 		delay(500);
 		digitalWrite(LED_Error, 0);
-	
+
 	}
 	else {
 		if (isUp == true)
@@ -1488,7 +1499,8 @@ byte currentTableSide() {
 
 bool onlyBinaryNumbers(String messageString) {
 	for (char i = 0; i < messageString.length(); i++) {
-		if (messageString.charAt(i) != ("1" || "0")) {
+		if ((String(messageString.charAt(i)) != "1") && (String(messageString.charAt(i)) != "0")) {
+			Serial.println("--> The received message contains non-binary numbers.");
 			return false;
 		}
 	}
