@@ -83,7 +83,7 @@ volatile byte stopPressed = LOW;
 
 void setup() {
 	uint8_t mac[] = { 0x90, 0xA2, 0xDA, 0x00, 0x51, 0x06 };
-	uint8_t ip[] = { 192, 168, 0, 160 };
+	uint8_t ip[] = { 192, 168, 0, 160 }; 
 	uint8_t gateway[] = { 161, 53, 116, 1 };
 	uint8_t subnet[] = { 255, 255, 252, 0 };
 	Ethernet.begin(mac, ip, subnet);
@@ -143,13 +143,14 @@ void setup() {
 		Mb.R[i] = 0;
 	}
 	Mb.R[5] = -1;
+	Mb.R[2] = 2; // Set status to "Power on"
 	Serial.println("Modbus registers set to 0.");
 }
 
 //////////////////////////////// MAIN //////////////////////////////////////////////
 void loop() {
 
-	while (Mb.R[2] != 1) {
+	while (Mb.R[2] != 4) {
 		if (debugMessage != "--> Ready to start. ") {
 			debugMessage = "--> Ready to start. ";
 			Serial.println(debugMessage);
@@ -180,8 +181,8 @@ void loop() {
 			Serial.println(modeMessage);
 		}
 
-		temp1 = Mb.R[5];
-		temp2 = Mb.R[6];
+		temp1 = Mb.R[6];
+		temp2 = Mb.R[5];
 
 		if ((Mb.R[5] >= 0) && ((Mb.R[7] == 1) || (Mb.R[7] == 2))) {
 
@@ -356,8 +357,8 @@ void loop() {
 				Serial.print(tableRight[i]);
 			} Serial.println(" ");
 
-			Mb.R[5] = -1;
-			Mb.R[6] = 0;
+			Mb.R[6] = -1;
+			Mb.R[5] = 0;
 		}
 
 		break;
@@ -628,6 +629,14 @@ void loop() {
 		} while (isHandFull == true);
 
 		break;
+	case 4:
+		//For testing:
+		Serial.println("Received message:");
+		Serial.println(Mb.R[5]);
+		Serial.println(Mb.R[6]);
+
+		Mb.R[3] = 5;
+		break;
 	default:
 		if (modeMessage != "--> Please select a mode.") {
 			modeMessage = "--> Please select a mode.";
@@ -637,6 +646,7 @@ void loop() {
 	}
 }
 //////////////////////////////// FUNCTIONS //////////////////////////////////////////////
+
 void tableGoRight() {
 
 	if ((digitalRead(C5_izvucen) == 0) || (digitalRead(C6_izvucen) == 0)) {
@@ -975,15 +985,13 @@ void StartPressed() {
 	digitalWrite(LED_Start, LOW);
 	digitalWrite(LED_Stop, LOW);
 
-	Mb.R[2] = 1;
-	Mb.R[1] = 0;
+	Mb.R[2] = 4;
 
 }
 
 void StopPressed() {
 	Serial.println("--> Stop pressed.");
-	Mb.R[1] = 1;
-	Mb.R[2] = 0;
+	Mb.R[2] = 3;
 	digitalWrite(LED_Stop, HIGH);
 }
 
@@ -1476,6 +1484,15 @@ byte currentTableSide() {
 	else if (digitalRead(handIsRight) == 1) {
 		return 2;
 	}
+}
+
+bool onlyBinaryNumbers(String messageString) {
+	for (char i = 0; i < messageString.length(); i++) {
+		if (messageString.charAt(i) != ("1" || "0")) {
+			return false;
+		}
+	}
+	return true;
 }
 
 void flashError() {
