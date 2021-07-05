@@ -1,4 +1,9 @@
-﻿#include <Controllino.h>
+﻿/*
+* Latest version of the code can viewed on GitHub:
+* https://github.com/andelkov/MasterThesisProject/	
+*/
+
+#include <Controllino.h>
 #include <SPI.h>
 #include <Ethernet.h>
 #include "Mudbus.h"
@@ -142,8 +147,9 @@ void setup() {
 	for (byte i = 0; i < 125; i++) {	 // Set every Modbus register value to 0
 		Mb.R[i] = 0;
 	}
-	Mb.R[5] = -1;
-	Mb.R[2] = 2; // Set status to "Power on"
+	Mb.R[5] = -1;	// For Auto mode
+	Mb.R[6] = -1;	//
+	Mb.R[2] = 2;	// Set status to "Power on"
 	Serial.println("Modbus registers set to 0.");
 }
 
@@ -346,8 +352,8 @@ void loop() {
 				}
 			}
 			else {
+				Mb.R[5] = -1;
 				Mb.R[6] = -1;
-				Mb.R[5] = 0;
 			}
 
 			Serial.print("Our table positions are on LEFT table: ");
@@ -362,8 +368,8 @@ void loop() {
 				Serial.print(tableRight[i]);
 			} Serial.println(" ");
 
+			Mb.R[5] = -1;
 			Mb.R[6] = -1;
-			Mb.R[5] = 0;
 		}
 
 		break;
@@ -636,15 +642,16 @@ void loop() {
 		break;
 	case 4:
 		//For testing:
-		temp1 = Mb.R[6];
-		temp2 = Mb.R[5];
 
-		message = makeLong(temp1, temp2);
+		Serial.print(Mb.R[5]);
+		Serial.print(Mb.R[6]);
+
+		message = makeLong(Mb.R[6], Mb.R[5]);
 		Serial.print("Message string is: ");
 		messageString = String(message);
 		Serial.print(messageString);
 
-	
+
 
 		Mb.R[3] = 5;
 		break;
