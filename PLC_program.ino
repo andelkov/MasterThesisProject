@@ -1,6 +1,7 @@
 ﻿/*
-* Latest version of the code can viewed on GitHub:
+* Latest version of this code can viewed on GitHub:
 * https://github.com/andelkov/MasterThesisProject/	
+* , under filename: PLC_program.ino
 */
 
 #include <Controllino.h>
@@ -39,51 +40,51 @@ byte tableLeft[10] = { NULL, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 byte tableRight[10] = { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 //Pin configuration:
-const byte C1_cilindar = CONTROLLINO_R1; // R1    Cilindar 1
-const byte C2_cilindar = CONTROLLINO_R2; // R2    Cilindar 2
+const byte C1_cilindar = CONTROLLINO_R1; // R1    Cylinder 1
+const byte C2_cilindar = CONTROLLINO_R2; // R2    Cylinder 2
 
-const byte C3_cilindar = CONTROLLINO_R3; // R3    Cilindar 3
-const byte C4_cilindar = CONTROLLINO_R4; // R4    Cilindar 4
+const byte C3_cilindar = CONTROLLINO_R3; // R3    Cylinder 3
+const byte C4_cilindar = CONTROLLINO_R4; // R4    Cylinder 4
 
-const byte C5_cilindar = CONTROLLINO_R5; // R5    Cilindar 5
-const byte C6_cilindar = CONTROLLINO_R6; // R6    Cilindar 6
+const byte C5_cilindar = CONTROLLINO_R5; // R5    Cylinder 5
+const byte C6_cilindar = CONTROLLINO_R6; // R6    Cylinder 6
 
-const byte C7_cilindar = CONTROLLINO_R7; // R7    Cilindar 7 (180 degree body rotate)
-const byte C8_cilindar = CONTROLLINO_R8; // R8    Cilindar 8 (up-down of body)
-const byte C9_cilindar = CONTROLLINO_R9; // R9    Cilindar 9 (180 degree hand rotate)
+const byte C7_cilindar = CONTROLLINO_R7; // R7    Cylinder 7 (180 degree body rotate)
+const byte C8_cilindar = CONTROLLINO_R8; // R8    Cylinder 8 (up-down of body)
+const byte C9_cilindar = CONTROLLINO_R9; // R9    Cylinder 9 (180 degree hand rotate)
 
-const byte C1_izvucen = CONTROLLINO_A0;  // AI0   senzor C1.0
-const byte C1_uvucen = CONTROLLINO_A1;   // AI1   senzor C1.1
-const byte C2_uvucen = CONTROLLINO_A2;   // AI2   senzor C2.0
-const byte C2_izvucen = CONTROLLINO_A3;  // AI3   senzor C2.1
+const byte C1_izvucen = CONTROLLINO_A0;  // AI0   sensor C1.0
+const byte C1_uvucen = CONTROLLINO_A1;   // AI1   sensor C1.1
+const byte C2_uvucen = CONTROLLINO_A2;   // AI2   sensor C2.0
+const byte C2_izvucen = CONTROLLINO_A3;  // AI3   sensor C2.1
 
-const byte C3_izvucen = CONTROLLINO_A4;  // AI4   senzor C3.0
-const byte C3_uvucen = CONTROLLINO_A5;   // AI5   senzor C3.1
-const byte C4_uvucen = CONTROLLINO_A6;   // AI6   senzor C4.0
-const byte C4_izvucen = CONTROLLINO_A7;  // AI7   senzor C4.1
+const byte C3_izvucen = CONTROLLINO_A4;  // AI4   sensor C3.0
+const byte C3_uvucen = CONTROLLINO_A5;   // AI5   sensor C3.1
+const byte C4_uvucen = CONTROLLINO_A6;   // AI6   sensor C4.0
+const byte C4_izvucen = CONTROLLINO_A7;  // AI7   sensor C4.1
 
-const byte C5_izvucen = CONTROLLINO_A8;  // AI8   senzor C5.0
-const byte C5_uvucen = CONTROLLINO_A9;   // AI9   senzor C5.1
-const byte C6_uvucen = CONTROLLINO_A10;  // AI10  senzor C6.0
-const byte C6_izvucen = CONTROLLINO_A11; // AI11  senzor C6.1
+const byte C5_izvucen = CONTROLLINO_A8;  // AI8   sensor C5.0
+const byte C5_uvucen = CONTROLLINO_A9;   // AI9   sensor C5.1
+const byte C6_uvucen = CONTROLLINO_A10;  // AI10  sensor C6.0
+const byte C6_izvucen = CONTROLLINO_A11; // AI11  sensor C6.1
 
-const byte Vacuum_1 = CONTROLLINO_D0;    // DO0   upali vakuum 1
-const byte Vacuum_2 = CONTROLLINO_D1;    // DO1   upali vakuum 2
+const byte Vacuum_1 = CONTROLLINO_D0;    // DO0   turn on vacuum 1
+const byte Vacuum_2 = CONTROLLINO_D1;    // DO1   turn on vacuum 2
 
-const byte LED_Start = CONTROLLINO_D5;   // DO5   svjetlo Start/ON
-const byte LED_Error = CONTROLLINO_D6;   // DO6   svjetlo Error
-const byte LED_Stop = CONTROLLINO_D7;    // DO7   svjetlo Stop
+const byte LED_Start = CONTROLLINO_D5;   // DO5   light Start/ON
+const byte LED_Error = CONTROLLINO_D6;   // DO6   light Error
+const byte LED_Stop = CONTROLLINO_D7;    // DO7   light Stop
 
-const byte handIsRight = 66;             // DI0   senzor C7.0, ruka je sad desno
-const byte handIsLeft = 67;              // DI1   senzor C7.1, ruka je sad lijevo
+const byte handIsRight = 66;             // DI0   sensor C7.0, hand is now at right side
+const byte handIsLeft = 67;              // DI1   sensor C7.1, hand is now at left side
 
-const byte pawnGrabbed_V1 = 10;          // DI2   senzor vakuum 1
-const byte pawnGrabbed_V2 = 11;          // DI3   senzor vakuum 2
+const byte pawnGrabbed_V1 = 10;          // DI2   sensor vacuum 1
+const byte pawnGrabbed_V2 = 11;          // DI3   sensor vacuum 2
 
-const byte interruptStartPin = 18;       // IN0   interrupt ulaz, Start tipka
+const byte interruptStartPin = 18;       // IN0   interrupt input, Start button
 volatile byte startPressed = LOW;
 
-const byte interruptStopPin = 19;        // IN1   interrupt ulaz, Stop tipka
+const byte interruptStopPin = 19;        // IN1   interrupt input, Stop button
 volatile byte stopPressed = LOW;
 
 void setup() {
@@ -100,43 +101,43 @@ void setup() {
 	Serial.print("My IP address: ");
 	Serial.println(Ethernet.localIP());
 
-	pinMode(CONTROLLINO_IN0, INPUT);	// IN0   tipka Start
-	pinMode(CONTROLLINO_IN1, INPUT);	// IN1   tipka Stop
+	pinMode(CONTROLLINO_IN0, INPUT);	// IN0   button Start
+	pinMode(CONTROLLINO_IN1, INPUT);	// IN1   button Stop
 
-	pinMode(CONTROLLINO_A0, INPUT);		// AI0   senzor C1.0
-	pinMode(CONTROLLINO_A1, INPUT);		// AI1   senzor C1.1
-	pinMode(CONTROLLINO_A2, INPUT);		// AI2   senzor C2.0
-	pinMode(CONTROLLINO_A3, INPUT);		// AI3   senzor C2.1
-	pinMode(CONTROLLINO_A4, INPUT);		// AI4   senzor C3.0
-	pinMode(CONTROLLINO_A5, INPUT);		// AI5   senzor C3.1
+	pinMode(CONTROLLINO_A0, INPUT);		// AI0   sensor C1.0
+	pinMode(CONTROLLINO_A1, INPUT);		// AI1   sensor C1.1
+	pinMode(CONTROLLINO_A2, INPUT);		// AI2   sensor C2.0
+	pinMode(CONTROLLINO_A3, INPUT);		// AI3   sensor C2.1
+	pinMode(CONTROLLINO_A4, INPUT);		// AI4   sensor C3.0
+	pinMode(CONTROLLINO_A5, INPUT);		// AI5   sensor C3.1
 
-	pinMode(CONTROLLINO_A6, INPUT);		// AI6   senzor C4.0
-	pinMode(CONTROLLINO_A7, INPUT);		// AI7   senzor C4.1
-	pinMode(CONTROLLINO_A8, INPUT);		// AI8   senzor C5.0
-	pinMode(CONTROLLINO_A9, INPUT);		// AI9   senzor C5.1
-	pinMode(CONTROLLINO_A10, INPUT);	// AI10  senzor C6.0
-	pinMode(CONTROLLINO_A11, INPUT);	// AI11  senzor C6.1
+	pinMode(CONTROLLINO_A6, INPUT);		// AI6   sensor C4.0
+	pinMode(CONTROLLINO_A7, INPUT);		// AI7   sensor C4.1
+	pinMode(CONTROLLINO_A8, INPUT);		// AI8   sensor C5.0
+	pinMode(CONTROLLINO_A9, INPUT);		// AI9   sensor C5.1
+	pinMode(CONTROLLINO_A10, INPUT);	// AI10  sensor C6.0
+	pinMode(CONTROLLINO_A11, INPUT);	// AI11  sensor C6.1
 
-	pinMode(66, INPUT);					// DI0   senzor C7.0, ruka je desno
-	pinMode(67, INPUT);					// DI1   senzor C7.1
-	pinMode(10, INPUT);					// DI2   senzor vakuum 1
-	pinMode(11, INPUT);					// DI3   senzor vakuum 2
+	pinMode(66, INPUT);					// DI0   sensor C7.0, 
+	pinMode(67, INPUT);					// DI1   sensor C7.1
+	pinMode(10, INPUT);					// DI2   sensor vacuum 1
+	pinMode(11, INPUT);					// DI3   sensor vacuum 2
 
-	pinMode(CONTROLLINO_D0, OUTPUT);	// DO0   vacuum 1 ON (donji)
-	pinMode(CONTROLLINO_D1, OUTPUT);	// DO1   vacuum 2 ON (gornji)
+	pinMode(CONTROLLINO_D0, OUTPUT);	// DO0   vacuum 1 ON (upper)
+	pinMode(CONTROLLINO_D1, OUTPUT);	// DO1   vacuum 2 ON (lower)
 	pinMode(CONTROLLINO_D5, OUTPUT);	// DO5   LED Ready
 	pinMode(CONTROLLINO_D6, OUTPUT);	// DO6   LED Error
 	pinMode(CONTROLLINO_D7, OUTPUT);	// DO7   LED Stop
 
-	pinMode(CONTROLLINO_R1, OUTPUT);	// R1    Cilindar 1
-	pinMode(CONTROLLINO_R2, OUTPUT);	// R2    Cilindar 2
-	pinMode(CONTROLLINO_R3, OUTPUT);	// R3    Cilindar 3
-	pinMode(CONTROLLINO_R4, OUTPUT);	// R4    Cilindar 4
-	pinMode(CONTROLLINO_R5, OUTPUT);	// R5    Cilindar 5
-	pinMode(CONTROLLINO_R6, OUTPUT);	// R6    Aktuator 6
-	pinMode(CONTROLLINO_R7, OUTPUT);	// R7    Aktuator 7   (180 degree body rotate)
-	pinMode(CONTROLLINO_R8, OUTPUT);	// R8    Aktuator 8   (up-down of body)
-	pinMode(CONTROLLINO_R9, OUTPUT);	// R9    Aktuator 9   (180 degree hand rotate)
+	pinMode(CONTROLLINO_R1, OUTPUT);	// R1    Cylinder 1
+	pinMode(CONTROLLINO_R2, OUTPUT);	// R2    Cylinder 2
+	pinMode(CONTROLLINO_R3, OUTPUT);	// R3    Cylinder 3
+	pinMode(CONTROLLINO_R4, OUTPUT);	// R4    Cylinder 4
+	pinMode(CONTROLLINO_R5, OUTPUT);	// R5    Cylinder 5
+	pinMode(CONTROLLINO_R6, OUTPUT);	// R6    Actuator 6
+	pinMode(CONTROLLINO_R7, OUTPUT);	// R7    Actuator 7   (180 degree body rotate)
+	pinMode(CONTROLLINO_R8, OUTPUT);	// R8    Actuator 8   (up-down of body)
+	pinMode(CONTROLLINO_R9, OUTPUT);	// R9    Actuator 9   (180 degree hand rotate)
 
 	pinMode(interruptStartPin, INPUT);
 	pinMode(interruptStopPin, INPUT);
@@ -148,7 +149,7 @@ void setup() {
 		Mb.R[i] = 0;
 	}
 	Mb.R[5] = -1;	// For Auto mode
-	Mb.R[6] = -1;	//
+	Mb.R[6] = -1;	// For Auto mode
 	Mb.R[2] = 2;	// Set status to "Power on"
 	Serial.println("Modbus registers set to 0.");
 }
