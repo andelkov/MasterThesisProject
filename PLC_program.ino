@@ -1,7 +1,7 @@
 ﻿/*
 * Latest version of this code can viewed on GitHub:
 * https://github.com/andelkov/MasterThesisProject/	
-* , under filename: PLC_program.ino
+* , as filename: PLC_program.ino
 */
 
 #include <Controllino.h>
