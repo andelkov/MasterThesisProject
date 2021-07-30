@@ -1,2 +1,2 @@
 # MasterThesisProject
-Source code of my Master thesis
+Source code of my Master thesis project
