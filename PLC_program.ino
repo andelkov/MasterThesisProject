@@ -1,5 +1,5 @@
 ﻿/*
-* Latest version of this code can viewed on GitHub:
+* Latest version of this code can be viewed on GitHub:
 * https://github.com/andelkov/MasterThesisProject/	
 * , as filename: PLC_program.ino
 */
